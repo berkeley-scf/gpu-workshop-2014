@@ -1,0 +1,600 @@
+An Introduction to Using GPUs for Computation
+==================================================================
+Chris Paciorek, Statistical Computing Facility, Department of Statistics, UC Berkeley
+
+Presented: April 25, 2014
+Last Revised: March 15, 2014
+
+
+```{r setup, include=FALSE}
+opts_chunk$set(cache = TRUE) # because the compilation takes time, let's cache it
+```
+
+# This tutorial
+
+Materials for this tutorial, including the R markdown file that was used to create this document are available on github at scf/git.  You can download the files by doing a git clone:
+```{clone, eval=FALSE, engine='bash'}
+git clone https://github.com/berkeley-scf/gpu-workshop-2014
+```
+
+# Overview
+
+GPUs (Graphics Processing Units) are processing units originally designed for rendering graphics on a computer quickly. This is done by having a large number of simple processing units for massively parallel calculation. The idea of general purpose GPU (GPGPU) computing is to exploit this capability for general computation. 
+
+We'll see some high-level and somewhat lower-level ways to program calculations for implementation on the GPU. The basic context of GPU programming is "data parallelism", in which the same calculation is done to lots of pieces of data. This could be a mathematical calcuation on millions of entries in a vector or a simulation with many independent simulations. Some examples of data parallelism in clude matrix multiplication (doing the multiplication task on many separate matrix elements) or numerical integration (doing a numerical estimate of the piecewise integral on many intervals/regions).
+
+# Hardware
+
+Two of the main suppliers of GPUs are NVIDIA and AMD. CUDA is a platform for programming on GPUs specifically for NVIDIA GPUs that allows you to send C/C++/Fortran code for execution on the GPU.  OpenCL is an alternative that will work with a broader variety of GPUs. However, CUDA is quite popular and since Amazon EC2 provides NVIDIA GPUs we'll use CUDA here. 
+
+GPUs have many processing units but limited memory. Also, they can only use data in their own memory, not in the CPU's memory, so one must transfer data back and forth between the CPU (the `host`) and the GPU (the `device`). This copying can in some operations constitute a very large fraction of the overall computation. So it is best to create the data and/or leave the data (for subsequent calculations) on the GPU when possible and to limit transfers. 
+
+The g2.2xlarge Amazon EC2 instance types have 1536 cores and 4 Gb memory. They're of the `Kepler` architecture (3rd generation). The 2nd generation was `Fermi` and the 1st was `Tesla`. (However note that `Tesla` is also used by NVIDIA to refer to different chip types, so for example the `cg1.4xlarge` chips are `NVIDIA Tesla M2050 GPUs ("Fermi" GF100)`, but are the `Fermi` architecture.) Originally GPUs supported only single precision (i.e., `float` calculations) but fortunately they now support double precision operations and all of the examples here will use doubles to avoid potential numerical issues, in particular with linear algebra calculations. 
+
+### Demonstration using Amazon's EC2 
+
+Since we don't have any machines with a GPU, we'll need to use a cloud-based machine. Amazon's EC2 provide two types of GPU instances: g2.2xlarge and cg1.4xlarge. The first is more recent, though in some of my tests cg1.4xlarge was actually faster. However given that the price for g2.2xlarge is 65 cents per hour and cg1.4xlarge is more than $2 per hour, we'll use g2.2xlarge.
+
+I've created an Amazon machine image (an AMI) that is the binary representation of the Linux Ubuntu operating system for a machine with support for GPU calculations. The AMI contains the following software and packages: R and RCUDA, Python and PyCUDA, CUDA, and MAGMA. 
+
+Based on this AMI I've started a virtual machine (VM) that we can login to (see below for instructions) via SSH, just like any SCF Linux server.
+
+If you were willing to pay Amazon and had an account you can start a VM (in the Oregon (us-west-2) region) using the SCF AMI by searching for "Public Images" at the [EC2 console](https://console.aws.amazon.com/ec2/v2/home?region=us-west-2#Images:) for "scf_0.2-gpu". [note to CJP check this to make sure I can find it] Then just launch a VM, selecting `g2.2xlarge` under the `GPU instances` tab. Alternatively, if you are using StarCluster (e.g., [this tutorial](http://statistics.berkeley.edu/computing/cloud-computation) provides some info on using StarCluster with EC2 to start up VMs or clusters of VMs), you can start a VM using the SCF AMI by setting the following in the StarCluster `config` file:
+
+```{starcluster-config, eval=FALSE, engine='bash'}
+AWS_REGION_NAME = us-west-2
+AWS_REGION_HOST = ec2.us-west-2.amazonaws.com
+NODE_IMAGE_ID = ami-b8600f88
+NODE_INSTANCE_TYPE = g2.2xlarge
+```
+
+
+Note that the EML (Economics) has a GPU on one of the EML Linux servers that EML users can access. If this is of interest to you, email consult@econ.berkeley.edu and I will work to get it set up analogously to the Amazon VM and to help you get started. 
+
+And note that Biostatistics has a GPU on one of its servers. Talk to Burke for more information.
+
+### The Amazon VM
+
+I'll start up the Amazon VM and SSH to it using my own Starcluster config file:
+
+```{start-VM, engine='bash'}
+starcluster start -c gpu gpuvm
+starcluster sshmaster -u paciorek gpuvm
+```
+
+As the root user, I need to update the RCUDA package (relative to that installed on the SCF GPU AMI) to fix a bug in RCUDA.
+```{update-RCUDA, engine='bash'}
+starcluster sshmaster  gpuvm
+# now on the VM:
+cd /usr/src
+mv RCUDA{,-}
+git clone https://github.com/duncantl/RCUDA
+cd RCUDA/src
+ln -s ../../RAutoGenRunTime/src/RConverters.c .
+ln -s ../../RAutoGenRunTime/inst/include/RConverters.h .
+ln -s ../../RAutoGenRunTime/inst/include/RError.h .
+cd ../..
+R CMD build RCUDA
+R CMD INSTALL RCUDA_0.4-0.tar.gz 
+```
+
+I need to put the public key in the ubuntu user's .ssh directory so others can log in:
+```{path, engine='bash'}
+starcluster sshmaster -u ubuntu  gpuvm
+scp paciorek@smeagol.berkeley.edu:~/staff/workshops/gpus/gpu_rsa.pub .ssh/.
+cat .ssh/gpu_rsa.pub >> .ssh/authorized_keys
+echo "A few rules for using this VM, since everyone is sharing the 'ubuntu' user name:" >> README_BEFORE_DOING_ANYTHING_ON_THIS_VM
+echo "1) create a unique directory here in /home/ubuntu and place your files only in that directory so that there are not conflicts with other users; e.g., create and put your files in /home/ubuntu/sarah if your name is sarah" >> README_BEFORE_DOING_ANYTHING_ON_THIS_VM
+echo "2) you have sudo privileges but you should not use them to alter the system" >> README_BEFORE_DOING_ANYTHING_ON_THIS_VM
+```
+
+I also need to make sure that CUDA-related executables are in my path:
+
+```{path, engine='bash'}
+export PATH=${PATH}:/usr/local/cuda/bin
+echo "" >> ~/.bashrc
+echo "export PATH=${PATH}:/usr/local/cuda/bin" >> ~/.bashrc
+echo "" >> ~/.bashrc
+echo "alias gtop=\"nvidia-smi -q -g 0 -d UTILIZATION -l 1\"" >> ~/.bashrc
+
+```
+
+For the moment, you can connect to the Amazon VM I am using yourself. Here's what you need to do.
+
+* copy [this ssh key file](http://www.stat.berkeley.edu/scf/gpu_rsa)
+ to your computer (on a UNIX-like machine, including Macs), put it in `~/.ssh`)
+* open a terminal window on a UNIX-alike machine (you might be able to ssh via putty or the like if you can point it to the key file you just copied to your machine) and SSH to the VM as follows:
+
+```{ssh, engine='bash'}
+ssh -i ~/.ssh/gpu_rsa ubuntu@ec2-${ip}.us-west-2.compute.amazonaws.com
+```
+
+* since multiple people are sharing this VM and are all logging in as the 'ubuntu' user, please make a directory ~/ubuntu/YourUserName and only work within that directory
+
+### Observing Performance on the GPU
+
+The following command will allow you to see some information analogous to `top` on the CPU. 
+
+```{gtop, engine='bash'}
+alias gtop="nvidia-smi -q -g 0 -d UTILIZATION -l 1"
+gtop
+```
+
+Here's some example output when the GPU is idle: 
+
+```{gtop output, engine='bash', eval=FALSE}
+==============NVSMI LOG==============
+
+Timestamp                           : Mon Apr  7 21:15:39 2014
+Driver Version                      : 319.37
+
+Attached GPUs                       : 1
+GPU 0000:00:03.0
+    Utilization
+        Gpu                         : 0 %
+        Memory                      : 0 %
+```
+
+
+
+# Software Tools
+
+* CUDA - platform for programming on an NVIDIA GPU using C/C++/Fortran code
+* CUBLAS - a BLAS implementation for matrix-vector calculations on an NVIDIA GPU
+* CURANDOM - random number generation on an NVIDIA GPU
+* MAGMA - a package for combined CPU-GPU linear algebra, intended to be analogous to LAPACK + BLAS
+* RCUDA - an R package providing a front-end for CUDA
+* R's magma package - a front-end for MAGMA
+* PyCUDA - a Python package providing a front-end for CUDA
+
+Note that RCUDA is still in development and is on Github, but should be high-quality as it is developed by Duncan Temple Lang at UC-Davis.
+
+We'll see all of these in action.
+
+There is also
+* openCL - an alternative to CUDA that can also be used with non-NVIDIA GPUs
+* PyOpenCL
+* R's OpenCL package
+
+
+
+# Linear Algebra on the GPU
+
+We'll start with very high-level use of the GPU by simply calling linear algebra routines that use the GPU. The simplest approach for this is to use R's magma package.
+
+### Using MAGMA via R
+
+The MAGMA library provides a drop-in for the functionality of the BLAS and LAPACK that carries out linear algebra on both the CPU and GPU, choosing smartly where to do various aspects of the calculation.
+
+R's magma package provides a front-end to MAGMA, with functionality for arithmetic operations, backsolve, matrix multiplication, Cholesky, inverse, crossproduct, LU, QR, and solve. See `help("magma-class")` for a list, as `library(help = magma)` only lists a few of the functions in the package.
+
+[Note for Demo: As we run the calculations on the GPU, let's look at the computation with our gtop utility.]
+
+```{magma-R, eval=FALSE}
+# export to RmagmaExample.R
+library(magma)
+# create a MAGMA matrix and do an operation via the CPU interface
+n <- 4096 # 8192
+x <- matrix(rnorm(n^2), n)
+mX <- magma(x)
+v <- rnorm(n)
+mV <- magma(v)
+gpu(mV)
+mVc <- magma(v)
+gpu(mVc) <- FALSE
+
+system.time({
+mY <- crossprod(mX);
+mU <- chol(mY);
+mR <- backsolve(mU, mV)
+})
+# 2.8 for n=4096; 18.3 for n=8192
+
+system.time({
+Y <- crossprod(x);
+U <- chol(Y);
+R <- backsolve(U, v)
+})
+# 5.8 for n=4096; 45.2 for n=8192
+
+# double precision?
+range(abs(mY - Y))
+options(digits = 16)
+mY[1:3]
+Y[1:3]
+```
+
+Be careful of memory use as GPU's memory may be limited (on the EC2 instance, it's 4 Gb).
+
+### Using C to call CUDA, CUDABLAS, and MAGMA
+
+Next let's use CUDA and MAGMA calls directly in C code. Both CUDA (through CUDABLAS) and MAGMA provide access to BLAS functionality, but only MAGMA provides LAPACK-like functionality (i.e., matrix factorizations/decompositions). Note that we'll now need to directly manage memory allocation on the GPU and transferring data back and forth from CPU to GPU.
+
+The code doesn't look to different than C code or calls to BLAS/LAPACK, but we use some CUDA functions and CUDA types.
+```{cuda, eval=FALSE, engine='c'}
+// cudaBlasExample.c
+
+```
+For (rough) comparison, the $n=8192$ multiplication on one of the SCF cluster nodes in R (using ACML as the BLAS) takes 74 seconds with one core and 11 seconds with 8 cores.
+
+Compilation goes as follows using `nvcc`, the analog to `gcc` when compiling for the GPU. For some reason, nvcc doesn't like .C extensions, so I've made the file have extension .c . As with C code we need to be careful about compiler flags, header files, and linking. [[it won't compile if use .cu extension]]
+```{cuda-compile, eval=FALSE, engine='bash'}
+nvcc cudaBlasExample.c -I/usr/local/cuda/include -lcublas -o cudaBlasExample
+```
+
+Now let's see the use of MAGMA. MAGMA provides analogous calls as CUDA/CUDABLAS for allocating memory, transferring data, and BLAS calls, as well as LAPACK type calls. Unfortunately the MAGMA documentation online appears to be seriously out-of-date, documenting version 0.2 with the current version being 1.4.0.
+
+Note that the LAPACK type calls have a CPU interface and a GPU interface. The GPU interface calls have function names ending in '_gpu' and operate on data objects in GPU memory. The CPU interface calls operate on data objects in CPU memory, handling the transfer to GPU memory as part of the calculation.
+
+Also, one can use 'pinned' memory on the CPU, which can reduce the transfer time for data to and from the GPU. However, it can involve an increase in time for doing the original memory allocation on the CPU. In the example I can control which is used.
+
+Here we'll compare timing for the GPU vs. standard BLAS/LAPACK as well as the CPU and GPU interfaces for the Cholesky.
+
+```{magma, eval=FALSE, engine='c'}
+// magmaExample.c
+
+```
+
+Compilation goes as follows. Note we can use gcc and that we need to link in the CPU BLAS and LAPACK since MAGMA uses both CPU and GPU for calculations (plus in this example I directly call BLAS and LAPACK functions).
+```{magma-compile, eval=FALSE, engine='bash'}
+gcc magmaExample.c -O3 -DADD_ -fopenmp  -DHAVE_CUBLAS -I/usr/local/cuda/include 
+   -I/usr/local/magma/include -L/usr/local/cuda/lib64 -L/usr/local/magma/lib -lmagma  
+   -llapack -lblas -lcublas -o magmaExample
+```
+
+Note that in this case, the transfer time was not a substantial proportion of the overall computation, but this may not always be the case. [point to example where it is?]
+
+### Synchronization    
+
+Note that in the various examples when I want to assess computational time, I make sure to synchronize the GPU via an appropriate function call. This ensures that all of the kernels have finished their calculations before I mark the end of the time interval. In general a function call to do a calculation on the GPU will simply start the calculation and then return, with the calculation continuing on the GPU.
+
+# Using Kernels for Parallel Computation
+
+Kernels are functions that code the core computational operations done on individual pieces of data. The basic mode of operation in this Section will be to write a kernel and then call the kernel on all the elements of a data object via C, R, or Python code. We'll need to pass the data from the CPU to the GPU and do the same in reverse to get the result. We'll also need to allocate memory on the GPU. However in some cases the transfer and allocation will be done automatically behind the scenese.
+
+### Background: Threads and Grids
+
+Each individual computation or series of computations on the GPU is done in a thread. Threads are organized into blocks and blocks of threads are organized in a grid. The blocks and grids can be 1-, 2-, or 3-dimensional. E.g., you might have a 1-d block of 500 threads, with a grid of 3 x 3 such blocks, for a total of $500 \times 9 = 4500$ threads. The choice of the grid/block arrangement can affect efficiency though I can't provide much guidance on that so you'd need to experiment or do some additional research. For our purposes, we'll often use a 2-d grid of 1-d blocks [right?]. In general you'd want each independent calculation done in a separate thread, but you'll want to pipeline together multiple operations within a computation to avoid copying from CPU to GPU and back. However, this might be done by keeping the data on the GPU. 
+
+Threads are quick to start. 
+
+This can all get quite complicated, with the possibility for communication amongst threads. We won't go into this, but threads within a block share memory (distinct from the main GPU memory) and can synchronize with each other, while threads in different blocks cannot cooperate. 
+
+Executing the following code as root will create an executable that will show you details on the GPU, including the possible block and grid dimensions. In particular note the maximum number of threads per block. 
+```{deviceQuery, engine='bash', eval=FALSE}
+cd  /usr/local/cuda/samples/1_Utilities/deviceQuery
+nvcc deviceQuery.cpp -I/usr/local/cuda/include 
+   -I/usr/local/cuda-5.5/samples/common/inc -o /usr/local/cuda/bin/deviceQuery
+cd -
+```
+
+Now running `deviceQuery` will show output like the following (on the SCF VM):
+```{deviceQuery output, engine='bash', eval=FALSE}
+paciorek@master:~$ deviceQuery
+deviceQuery Starting...
+
+ CUDA Device Query (Runtime API) version (CUDART static linking)
+
+Detected 1 CUDA Capable device(s)
+
+Device 0: "GRID K520"
+  CUDA Driver Version / Runtime Version          5.5 / 5.5
+  CUDA Capability Major/Minor version number:    3.0
+  Total amount of global memory:                 4096 MBytes (4294770688 bytes)
+  ( 8) Multiprocessors, (192) CUDA Cores/MP:     1536 CUDA Cores
+  GPU Clock rate:                                797 MHz (0.80 GHz)
+  Memory Clock rate:                             2500 Mhz
+  Memory Bus Width:                              256-bit
+  L2 Cache Size:                                 524288 bytes
+  Maximum Texture Dimension Size (x,y,z)         1D=(65536), 2D=(65536, 65536), 3D=(4096, 4096, 4096)
+  Maximum Layered 1D Texture Size, (num) layers  1D=(16384), 2048 layers
+  Maximum Layered 2D Texture Size, (num) layers  2D=(16384, 16384), 2048 layers
+  Total amount of constant memory:               65536 bytes
+  Total amount of shared memory per block:       49152 bytes
+  Total number of registers available per block: 65536
+  Warp size:                                     32
+  Maximum number of threads per multiprocessor:  2048
+  Maximum number of threads per block:           1024
+  Max dimension size of a thread block (x,y,z): (1024, 1024, 64)
+  Max dimension size of a grid size    (x,y,z): (2147483647, 65535, 65535)
+  Maximum memory pitch:                          2147483647 bytes
+  Texture alignment:                             512 bytes
+  Concurrent copy and kernel execution:          Yes with 2 copy engine(s)
+  Run time limit on kernels:                     No
+  Integrated GPU sharing Host Memory:            No
+  Support host page-locked memory mapping:       Yes
+  Alignment requirement for Surfaces:            Yes
+  Device has ECC support:                        Disabled
+  Device supports Unified Addressing (UVA):      Yes
+  Device PCI Bus ID / PCI location ID:           0 / 3
+  Compute Mode:
+     < Default (multiple host threads can use ::cudaSetDevice() with device simultaneously) >
+
+deviceQuery, CUDA Driver = CUDART, CUDA Driver Version = 5.5, CUDA Runtime Version = 5.5, NumDevs = 1, Device0 = GRID K520
+Result = PASS
+```
+
+In particular note the information on the number of CUDA cores, the GPU's memory, and the information on maximum threads per block and dimensions of thread blocks and grids.
+
+### GPU Calculations and Kernels
+
+The basic series of operations is:
+* allocate memory on the GPU
+* transfer data from CPU to GPU
+* launch the kernel to operate on the threads, with a given block/grid arrangement
+* [optionally] launch another kernel, which can access data stored on the GPU, including results from the previous kernel
+* transfer results back to CPU
+
+Some of this is obscured because CUDA, RCUDA, and PyCUDA do some of the work for you (and also obscured if you use pinned memory).
+
+When we write a kernel, we will need to have some initial code that determines a unique ID for that thread that allows the thread to access the appropriate part(s) of the data object(s) on the GPU.
+
+### Using CUDA directly
+
+First let's see a 'Hello, World' example that illustrates blocks of threads and grids of blocks.
+
+The idea is to have at least as many threads as the number of computations you are doing. Our kernel function contains the core calculation we want to do (in this case printing 'Hello world!' and code that figures out the unique ID of each thread, as this is often used within a calculation.
+
+```{helloWorld, eval=FALSE, engine='c'}
+// helloWorld.cu
+
+```
+
+In this case, compilation is as follows. Given the CUDA functionality used in the code (in particular the call to `printf` within the kernel), we need to specify a compute capability > 2.0 (corresponding to the Fermi generation of NVIDIA GPUs -- RIGHT?).
+
+```{helloWorld-compile, engine='bash', eval=FALSE}
+nvcc helloWorld.cu -arch=compute_20 -code=sm_20,compute_20 -o helloWorld
+```
+
+The result of this looks like:
+```{helloWorld-output, eval=FALSE, engine='bash'}
+Launching 20480 threads (N=20000)
+Hello world! My block index is (3,0) [Grid dims=(20,2)], 3D-thread index within block=(448,0,0) => thread index=1984
+Hello world! My block index is (3,0) [Grid dims=(20,2)], 3D-thread index within block=(449,0,0) => thread index=1985
+Hello world! My block index is (3,0) [Grid dims=(20,2)], 3D-thread index within block=(450,0,0) => thread index=1986
+....
+
+Hello world! My block index is (19,1) [Grid dims=(20,2)], 3D-thread index within block=(220,0,0) => thread index=20188 [### this thread would not be used for N=20000 ###]
+Hello world! My block index is (19,1) [Grid dims=(20,2)], 3D-thread index within block=(221,0,0) => thread index=20189 [### this thread would not be used for N=20000 ###]
+Hello world! My block index is (19,1) [Grid dims=(20,2)], 3D-thread index within block=(222,0,0) => thread index=20190 [### this thread would not be used for N=20000 ###]
+Hello world! My block index is (19,1) [Grid dims=(20,2)], 3D-thread index within block=(223,0,0) => thread index=20191 [### this thread would not be used for N=20000 ###]
+kernel launch success!
+That's all!
+```
+
+Note that because of some buffering issues, with this many threads, we can't see the output for all of them, hence the `if` statement in the kernel code. It is possible to retrieve info about the limit and change the limit using `cudaDeviceGetLimit()` and `cudaDeviceSetLimit()`.
+
+Now let's see an example of a distributed calculation using CUDA code, including memory allocation on the GPU and transfer between the GPU and CPU. Our example will be computing terms in an IID log-likelihood calculation. In this case we'll just use the normal density, but real applications would of course involve a more involved calculation.
+
+Note that here, I'll use 1024 (the maximum based on `deviceQuery`) threads per block and then a grid (2-d for simplicity) sufficiently large so that we have more threads than computational chunks. 
+
+```{kernelExample, eval=FALSE, engine='c'}
+// kernelExample.cu
+
+```
+
+In this case, compilation is as follows. In this case, we need to specify a compute capability > 2.0 in order to do calculations with doubles rather than floats.
+
+
+```{kernelExample-compile, engine='bash', eval=FALSE}
+nvcc kernelExample.cu -arch=compute_20 -code=sm_20,compute_20 -o kernelExample
+```
+
+Here are some results:
+```{kernelExample-output, eval=FALSE, engine='bash'}
+====================================================
+Grid dimension is 46 x 46
+Launching 2166784 threads (N=2097152)
+Input values: -0.658344 0.499804 -0.807257...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.321214 0.352100 0.288007...
+Output values (CPU): 0.321214 0.352100 0.288007...
+Timing results for n = 2097152
+Transfer to GPU time: 0.008920
+Calculation time (GPU): 0.001766
+Calculation time (CPU): 0.070951
+Transfer from GPU time: 0.001337
+Freeing memory...
+====================================================
+...
+====================================================
+Grid dimension is 363 x 363
+Launching 134931456 threads (N=134217728)
+Input values: -0.658344 0.499804 -0.807257...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.321214 0.352100 0.288007...
+Output values (CPU): 0.321214 0.352100 0.288007...
+Timing results for n = 134217728
+Transfer to GPU time: 0.556857
+Calculation time (GPU): 0.110254
+Calculation time (CPU): 4.605744
+Transfer from GPU time: 0.068865
+Freeing memory...
+====================================================
+```
+
+We see that the time for transferring to and from (particularly to) the GPU exceeds the calculation time, reinforcing the idea of keeping data on the GPU when possible. 
+
+Here's some code where we use pinned memory that is 'mapped' to the GPU such that the GPU directly accesses CPU memory. This can be advantageous if one exceeds the GPU's memory and, according to some sources, is best when you load the data only once. Another approach, using pinned but not mapped memory allows for more efficient transfer but without the direct access from the GPU, with a hidden transfer done behind the scenes. This may be better if the data is loaded multiple times on the GPU.
+
+```{kernelExample, eval=FALSE, engine='c'}
+// kernelExample-pinned.cu
+
+```
+
+Here are some results:
+```{kernelExample-pinned-output, eval=FALSE, engine='bash'}
+====================================================
+Grid dimension is 46 x 46
+Launching 2166784 threads (N=2097152)
+Input values: -0.658344 0.499804 -0.807257...
+Output values: 0.321214 0.352100 0.288007...
+Output values (CPU): 0.321214 0.352100 0.288007...
+Timing results for n = 2097152
+Calculation time (GPU): 0.002080
+Calculation time (CPU): 0.071038
+Freeing memory...
+====================================================
+...
+====================================================
+Grid dimension is 363 x 363
+Launching 134931456 threads (N=134217728)
+Input values: -0.658344 0.499804 -0.807257...
+Output values: 0.321214 0.352100 0.288007...
+Output values (CPU): 0.321214 0.352100 0.288007...
+Timing results for n = 134217728
+Calculation time (GPU): 0.255367
+Calculation time (CPU): 4.635453
+Freeing memory...
+====================================================
+```
+
+So using pinned mapped memory seems to help quite a bit in this case, as the total time with pinned memory is less than the time used for transfer plus calculation in the previous examples.
+
+### Calling CUDA Kernels from R (RCUDA)
+
+When we want to use CUDA from R, the kernel function will remain the same, but the pre- and post-processing is done in R rather than in C. Here's an example, with the same log-likelihood kernel. The CUDA kernel code is saved in a separate file but is identical to that in the full CUDA+C example above (with the exception that we need to wrap the kernel function in `extern "C"`).
+
+```{RCUDAexample, eval=FALSE}
+// RCUDAexample.R
+```
+
+In this example we see that we can either transfer data between CPU and GPU manually or have RCUDA do it for us. If we didn't want to overwrite the input, but rather to allocate space for the output on the GPU, we could use `cudaAlloc()`.  See `help(.cuda)` for some example code.
+
+We need to compile the kernel into a ptx object file, either outside of R:
+
+```{RCUDAexample-compile, engine='bash', eval=FALSE}
+nvcc --ptx  -arch=compute_20 -code=sm_20,compute_20 -o calc_loglik.ptx calc_loglik.cu
+```
+
+or inside of R:
+```{RCUDAexample-compile-inR, engine='R', eval=FALSE}
+ptx = nvcc(file = 'calc_loglik.cu', out = 'calc_loglik.ptx', target = 'ptx', '-arch=compute_20', '-code=sm_20,compute_20')
+```
+
+
+Here are some results:
+```{RCUDAexample-output, eval=FALSE, engine='bash'}
+Setting cuGetContext(TRUE)...
+Grid size:
+[1] 363 363   1
+Total number of threads to launch =  134931456 
+Running CUDA kernel...
+Input values:  0.8966972 0.2655087 0.3721239 
+Output values:  0.2457292 0.2658912 0.2656543 
+Output values (implicit transfer):  0.2457292 0.2658912 0.2656543 
+Output values (CPU with R):  0.2457292 0.2658912 0.2656543 
+Transfer to GPU time:  0.374 
+Calculation time (GPU):  0.078 
+Transfer from GPU time:  0.689 
+Calculation time (CPU):  9.981 
+Combined calculation+transfer via .cuda time (GPU):  4.303 
+```
+
+So the transfer time is again substantial in relative terms. Without that time, the speedup would be substantial. Strangely the streamlined call in which RCUDA handles the transfer is quite a bit slower for reasons that are not clear to me, but the RCUDA developer (Duncan Temple Lang at UC Davis) is looking into this.
+
+We can avoid explicitly specifying block and grid dimensions by using the `gridBy` argument to `.cuda`, which we'll see in a later example.
+
+
+WARNING #1: be very careful that the types of the R objects passed to the kernel match what the kernel is expecting. Otherwise the code can hang without an informative error message
+
+WARNING #2: Note the use of the `strict=TRUE` argument when passing values to the GPU. This ensures that numeric values are kept as doubles and not coerced to floats. 
+
+### Calling CUDA Kernels from Python plus GPU-vectorized Calculations (PyCUDA)
+
+Here the kernel code can be embedded in the Python script. Otherwise it's fairly similar to the use of RCUDA.
+
+```{PyCUDAexample, engine = 'python', eval=FALSE}
+// PyCUDAexample.py
+```
+
+Here are the results
+Here are some results:
+```{PyCUDAexample-output, eval=FALSE, engine='bash'}
+Generating random normals...
+Running GPU code...
+Time for calculation (GPU): 0.822662s
+Time for calculation (CPU): 21.522281s
+Output from GPU: 0.251608 0.229542 0.218257
+Output from CPU: 0.251608 0.229542 0.218257
+```
+
+PyCUDA also provides high-level functionality for vectorized calculations on the GPU. Basically you create a vector stored in GPU memory and then operate on it with a variety of mathematical functions. The module that do this are `gpuarray` and `cumath`.
+
+Here are some examples.
+
+```{gpuArrayExample, engine = 'python', eval=FALSE}
+// gpuArrayExample.py
+```
+
+Here are the timing results. The exponentiation shows a decent speedup, but the dot product does not.
+```{gpuArrayExample-output, eval=FALSE, engine='bash'}
+Transfer to GPU time: 0.529110s
+Timing vectorized exponentiation:
+GPU array calc time: 0.200997s
+CPU calc time: 3.135706s
+Timing vectorized dot product/sum of squares:
+GPU array calc time: 0.245807s
+CPU calc time: 0.103340s
+```
+
+# Random Number Generation on the GPU
+
+### Seeds
+
+From the CUDA documentation:
+
+`For the highest quality parallel pseudorandom number generation, each experiment should be assigned a unique seed. Within an experiment, each thread of computation should be assigned a unique sequence number. If an experiment spans multiple kernel launches, it is recommended that threads between kernel launches be given the same seed, and sequence numbers be assigned in a monotonically increasing way. If the same configuration of threads is launched, random state can be preserved in global memory between launches to avoid state setup time.`
+
+A lot of important info... we'll interpret/implement much of it in the demo below.
+
+Recall that RNG on a computer involves periodic generation from a deterministic, periodic sequence. The seed determines where one starts generating from within that sequence. The idea of the sequence numbers is to generate from non-overlapping blocks within the sequence, with each thread getting a different block.  
+
+
+
+### Calling CURAND via RCUDA
+
+Here's the code for the kernels we need. We need a kernel to initialize the RNG on each thread and one to do the sampling (though they could be combined in a single kernel). Note that the time involved in initializing the RNG for each thread is substantial. This shouldn't be a problem if one is doing a lot of calculations over time. To amortize this one-time expense, I generate multiple random numbers per thread.
+
+```{RNGexample-kernel, eval=FALSE}
+// random.cu
+```
+
+Here's the R code to call the kernel, which looks very similar to the RCUDA code we've already seen.
+
+```{RNGexample-R, eval=FALSE}
+// RNGexample.R
+```
+
+We get a pretty good speed up, which would be even more impressive if we can set up the calculations such that we don't need to transfer the whole large vector back to the CPU.
+
+```{RNGexample-output, eval=FALSE, engine='bash'}
+RNG initiation time:  0.115 
+GPU memory allocation time:  0.003 
+Calculation time (GPU):  0.256 
+Transfer from GPU time:  0.501 
+--------------------------------------
+Total time (GPU): 0.875
+--------------------------------------
+Calculation time (CPU):  9.963 
+```
+
+Also note the memory cost of the RNG states for the threads, 48 bytes per thread, which could easily exceed GPU memory if one starts up many threads. 
+
+One more note on RCUDA: we can have RCUDA decide on the gridding. Here's a modification of the RNG example to do this:
+
+```{gridBy, eval=FALSE}
+.cuda(rnorm, rng_states, dX, N, mu, sigma, N_per_thread, gridBy = nthreads, .numericAsDouble = getOption("CUDA.useDouble", TRUE))
+```
+
+### Calling CURAND from directly in C and from Python
+
+I may flesh this out at some point, but by looking at the RNG example via RCUDA and the examples of calling kernels from C and Python in the previous section, it should be straightforward to do RNG on the GPU controlled by C or Python.
+
+# Some Final Comments and Cautions
+
+* If you compile CUDA code into an object file, you can link that with other object files (e.g., from C or C++ code) into an executable that can operate on CPU and GPU. This also means you could compile a shared object (i.e., a library)  that you could call from R with .C, .Call, or Rcpp. 
+
+* Make sure that the types you pass from R or Python exactly match the types expected by the CUDA kernel. Hard-to-understand errors can otherwise result.
