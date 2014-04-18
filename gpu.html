@@ -195,7 +195,7 @@ hr {
 
 <p>Presented: April 25, 2014</p>
 
-<p>Last Revised: April 16, 2014</p>
+<p>Last Revised: April 18, 2014</p>
 
 <h1>0) This tutorial</h1>
 
@@ -703,12 +703,11 @@ Freeing memory...
 
 <h3>3.2) Calling CUDA Kernels from R (RCUDA)</h3>
 
-<p>When we want to use CUDA from R, the kernel function will remain the same, but the pre- and post-processing is done in R rather than in C. Here&#39;s an example, with the same log-likelihood kernel. The CUDA kernel code is saved in a separate file but is identical to that in the full CUDA+C example above (with the exception that we need to wrap the kernel function in <code>extern &quot;C&quot;</code>).</p>
+<p>When we want to use CUDA from R, the kernel function will remain the same, but the pre- and post-processing is done in R rather than in C. Here&#39;s an example, with the same log-likelihood kernel. The CUDA kernel code is saved in a <a href="https://github.com/berkeley-scf/gpu-workshop-2014/blob/master/calc_loglik.cu">separate file (calc_loglik.cu on the github repo)</a> separate file but is identical to that in the full CUDA+C example above (with the exception that we need to wrap the kernel function in <code>extern &quot;C&quot;</code>).</p>
 
-<pre><code class="RCUDAexample, eval=FALSE">// RCUDAexample.R
-</code></pre>
+<p>Here&#39;s the <a href="https://github.com/berkeley-scf/gpu-workshop-2014/blob/master/RCUDAexample.R">code (RCUDAexample.R on the github repo)</a></p>
 
-<p>In this example we see that we can either transfer data between CPU and GPU manually or have RCUDA do it for us. If we didn&#39;t want to overwrite the input, but rather to allocate space for the output on the GPU, we could use <code>cudaAlloc()</code>.  See <code>help(.cuda)</code> for some example code.</p>
+<p>In this example we see that we can either transfer data between CPU and GPU manually or have RCUDA do it for us. If we didn&#39;t want to overwrite the input, but rather to allocate separate space for the output on the GPU, we could use <code>cudaAlloc()</code>.  See <code>help(.cuda)</code> for some example code.</p>
 
 <p>We need to compile the kernel into a ptx object file, either outside of R:</p>
 
@@ -748,43 +747,41 @@ Combined calculation+transfer via .cuda time (GPU):  4.303
 
 <h3>3.3) Calling CUDA Kernels from Python plus GPU-vectorized Calculations (PyCUDA)</h3>
 
-<p>Here the kernel code can be embedded in the Python script. Otherwise it&#39;s fairly similar to the use of RCUDA.</p>
+<p>With PyCUDA the kernel code can be directly embedded in the Python script. Otherwise it&#39;s fairly similar to the use of RCUDA. Here&#39;s the <a href="https://github.com/berkeley-scf/gpu-workshop-2014/blob/master/PyCUDAexample.py">code (PyCUDAexample.py on the github repo)</a></p>
 
-<pre><code class="PyCUDAexample, engine = &#39;python&#39;, eval=FALSE">// PyCUDAexample.py
-</code></pre>
-
-<p>Here are the results
-Here are some results:</p>
+<p>Here are some results:</p>
 
 <pre><code class="PyCUDAexample-output, eval=FALSE, engine=&#39;bash&#39;">Generating random normals...
 Running GPU code...
-Time for calculation (GPU): 0.822662s
-Time for calculation (CPU): 21.522281s
-Output from GPU: 0.251608 0.229542 0.218257
-Output from CPU: 0.251608 0.229542 0.218257
+Time for calculation (GPU): 1.512139s
+Running Scipy CPU code...
+Time for calculation (CPU): 21.398803s
+Output from GPU: 0.168458 0.174912 0.252148
+Output from CPU: 0.168458 0.174912 0.252148
 </code></pre>
 
-<p>PyCUDA also provides high-level functionality for vectorized calculations on the GPU. Basically you create a vector stored in GPU memory and then operate on it with a variety of mathematical functions. The module that do this are <code>gpuarray</code> and <code>cumath</code>.</p>
+<p>PyCUDA also provides high-level functionality for vectorized calculations on the GPU. Basically you create a vector stored in GPU memory and then operate on it with a variety of mathematical functions. The modules that do this are <code>gpuarray</code> and <code>cumath</code>.</p>
 
-<p>Here are some examples.</p>
+<p>Here&#39;s the <a href="https://github.com/berkeley-scf/gpu-workshop-2014/blob/master/gpuArrayExample.py">code (gpuArrayExample.py on the github repo)</a></p>
 
-<pre><code class="gpuArrayExample, engine = &#39;python&#39;, eval=FALSE">// gpuArrayExample.py
-</code></pre>
+<p>Here are the timing results. </p>
 
-<p>Here are the timing results. The exponentiation shows a decent speedup, but the dot product does not.</p>
-
-<pre><code class="gpuArrayExample-output, eval=FALSE, engine=&#39;bash&#39;">Transfer to GPU time: 0.529110s
+<pre><code class="gpuArrayExample-output, eval=FALSE, engine=&#39;bash&#39;">Transfer to GPU time: 0.314641s
 Timing vectorized exponentiation:
-GPU array calc time: 0.200997s
-CPU calc time: 3.135706s
+GPU array calc time: 0.226006s
+CPU calc time: 3.155150s
 Timing vectorized dot product/sum of squares:
-GPU array calc time: 0.245807s
-CPU calc time: 0.103340s
+GPU array calc time: 0.254579s
+CPU calc time: 0.088157s
 </code></pre>
 
-<h1>4) Random Number Generation on the GPU</h1>
+<p>So the fully-vectorized calculation sees a pretty good speed-up but the dot product, which involves a reduction (the summation) does not. Also note that there is some compilation that gets done when the code is run the first time that causes the GPU calculation to be slow the first time but not the second time the code is run. </p>
 
-<h3>4.1) Seeds</h3>
+<h1>4) Random Number Generation (RNG) on the GPU</h1>
+
+<p>RNG is done via the CURAND (CUDA Random Number Generation) library. CURAND provides several different generators including the Mersenne Twister (the default in R). </p>
+
+<h3>4.1) Seeds and Sequences</h3>
 
 <p>From the CUDA documentation:</p>
 
@@ -792,19 +789,13 @@ CPU calc time: 0.103340s
 
 <p>A lot of important info&hellip; we&#39;ll interpret/implement much of it in the demo below.</p>
 
-<p>Recall that RNG on a computer involves periodic generation from a deterministic, periodic sequence. The seed determines where one starts generating from within that sequence. The idea of the sequence numbers is to generate from non-overlapping blocks within the sequence, with each thread getting a different block.  </p>
+<p>Recall that RNG on a computer involves generation of pseudo-random numbers from a deterministic, periodic sequence. The seed determines where one starts generating from within that sequence. The idea of the sequence numbers is to generate from non-overlapping blocks within the sequence, with each thread getting a different block.  </p>
 
 <h3>4.2) Calling CURAND via RCUDA</h3>
 
-<p>Here&#39;s the code for the kernels we need. We need a kernel to initialize the RNG on each thread and one to do the sampling (though they could be combined in a single kernel). Note that the time involved in initializing the RNG for each thread is substantial. This shouldn&#39;t be a problem if one is doing a lot of calculations over time. To amortize this one-time expense, I generate multiple random numbers per thread.</p>
+<p>For RNG, we need a kernel to initialize the RNG on each thread and one to do the sampling (though they could be combined in a single kernel). Note that the time involved in initializing the RNG for each thread is substantial. This shouldn&#39;t be a problem if one is doing a lot of calculations over time. To amortize this one-time expense, I generate multiple random numbers per thread. Here&#39;s the <a href="https://github.com/berkeley-scf/gpu-workshop-2014/blob/master/random.cu">kernel code (random.cu on the github repo)</a>.</p>
 
-<pre><code class="RNGexample-kernel, eval=FALSE">// random.cu
-</code></pre>
-
-<p>Here&#39;s the R code to call the kernel, which looks very similar to the RCUDA code we&#39;ve already seen.</p>
-
-<pre><code class="RNGexample-R, eval=FALSE">// RNGexample.R
-</code></pre>
+<p>And here&#39;s the <a href="https://github.com/berkeley-scf/gpu-workshop-2014/blob/master/RNGexample.R">R code (RNGexample.R on the github repo)</a> to call the kernel, which looks very similar to the RCUDA code we&#39;ve already seen.</p>
 
 <p>We get a pretty good speed up, which would be even more impressive if we can set up the calculations such that we don&#39;t need to transfer the whole large vector back to the CPU.</p>
 
@@ -825,9 +816,14 @@ Calculation time (CPU):  9.963
 <pre><code class="gridBy, eval=FALSE">.cuda(rnorm, rng_states, dX, N, mu, sigma, N_per_thread, gridBy = nthreads, .numericAsDouble = getOption(&quot;CUDA.useDouble&quot;, TRUE))
 </code></pre>
 
-<h3>4.3) Calling CURAND from directly in C and from Python</h3>
+<p>At the moment, I&#39;m not sure how to choose the RNG generator from within R. </p>
+
+<h3>4.3) Calling CURAND from C and from Python</h3>
 
 <p>I may flesh this out at some point, but by looking at the RNG example via RCUDA and the examples of calling kernels from C and Python in the previous section, it should be straightforward to do RNG on the GPU controlled by C or Python.</p>
+
+<p>To choose the generator in C (in particular the Mersenne Twister), this should work:
+<code>curandCreateGenerator(CURAND_RNG_PSEUDO_MTGP32)</code>.</p>
 
 <h1>5) Some Final Comments and Cautions</h1>
 
