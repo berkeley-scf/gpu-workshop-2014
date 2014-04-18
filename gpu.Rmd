@@ -89,7 +89,7 @@ For the moment, you can connect to the Amazon VM I am using yourself. Here's wha
 
 ```{ssh, engine='bash'}
 export ip=VALUE_OBTAINED_FROM_SCF
-ssh -i ~/.ssh/gpu_rsa ubuntu@ec2-${ip}.us-west-2.compute.amazonaws.com
+ssh -i ~/.ssh/gpu_rsa ubuntu@${ip}.us-west-2.compute.amazonaws.com
 ```
 
 * since multiple people are sharing this VM and are all logging in as the 'ubuntu' user, please make a directory ~/ubuntu/YourUserName and only work within that directory
@@ -485,12 +485,12 @@ Freeing memory...
 
 We see that the time for transferring to and from (particularly to) the GPU exceeds the calculation time, reinforcing the idea of keeping data on the GPU when possible. 
 
+#### Using Pinned Memory
+
 Here's some code where we use pinned memory that is 'mapped' to the GPU such that the GPU directly accesses CPU memory. This can be advantageous if one exceeds the GPU's memory and, according to some sources, is best when you load the data only once. Another approach, using pinned but not mapped memory allows for more efficient transfer but without the direct access from the GPU, with a hidden transfer done behind the scenes. This may be better if the data is loaded multiple times on the GPU.
 
-```{kernelExample, eval=FALSE, engine='c'}
-// kernelExample-pinned.cu
+Here's the [code (kernelExample-pinned.cu on the github repo)](https://github.com/berkeley-scf/gpu-workshop-2014/blob/master/kernelExample-pinned.cu).
 
-```
 
 Here are some results:
 ```{kernelExample-pinned-output, eval=FALSE, engine='bash'}

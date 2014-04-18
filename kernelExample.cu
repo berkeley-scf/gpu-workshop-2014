@@ -33,6 +33,7 @@ __global__ void calc_loglik(double* vals, int N, double mu, double sigma) {
         }
 }
 
+// CPU analog for speed comparison
 int calc_loglik_cpu(double* vals, int N, double mu, double sigma) {
   double std, e;
   for(int idx = 0; idx < N; idx++) {
@@ -73,8 +74,10 @@ int main (int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
 
+    // fixed block dimensions (1024x1x1 threads)
     const dim3 blockSize(BLOCK_D1, BLOCK_D2, BLOCK_D3);
     
+    // determine number of blocks we need for a given problem size
     int tmp = ceil(pow(N/BLOCK_D1, 0.5));
     printf("Grid dimension is %i x %i\n", tmp, tmp);
     dim3 gridSize(tmp, tmp, 1);

@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<title>An Introduction to Using GPUs for Computation</title>
+
+<!-- Styles for R syntax highlighter -->
+<style type="text/css">
+   pre .operator,
+   pre .paren {
+     color: rgb(104, 118, 135)
+   }
+
+   pre .literal {
+     color: #990073
+   }
+
+   pre .number {
+     color: #099;
+   }
+
+   pre .comment {
+     color: #998;
+     font-style: italic
+   }
+
+   pre .keyword {
+     color: #900;
+     font-weight: bold
+   }
+
+   pre .identifier {
+     color: rgb(0, 0, 0);
+   }
+
+   pre .string {
+     color: #d14;
+   }
+</style>
+
+<!-- R syntax highlighter -->
+<script type="text/javascript">
+var hljs=new function(){function m(p){return p.replace(/&/gm,"&amp;").replace(/</gm,"&lt;")}function f(r,q,p){return RegExp(q,"m"+(r.cI?"i":"")+(p?"g":""))}function b(r){for(var p=0;p<r.childNodes.length;p++){var q=r.childNodes[p];if(q.nodeName=="CODE"){return q}if(!(q.nodeType==3&&q.nodeValue.match(/\s+/))){break}}}function h(t,s){var p="";for(var r=0;r<t.childNodes.length;r++){if(t.childNodes[r].nodeType==3){var q=t.childNodes[r].nodeValue;if(s){q=q.replace(/\n/g,"")}p+=q}else{if(t.childNodes[r].nodeName=="BR"){p+="\n"}else{p+=h(t.childNodes[r])}}}if(/MSIE [678]/.test(navigator.userAgent)){p=p.replace(/\r/g,"\n")}return p}function a(s){var r=s.className.split(/\s+/);r=r.concat(s.parentNode.className.split(/\s+/));for(var q=0;q<r.length;q++){var p=r[q].replace(/^language-/,"");if(e[p]){return p}}}function c(q){var p=[];(function(s,t){for(var r=0;r<s.childNodes.length;r++){if(s.childNodes[r].nodeType==3){t+=s.childNodes[r].nodeValue.length}else{if(s.childNodes[r].nodeName=="BR"){t+=1}else{if(s.childNodes[r].nodeType==1){p.push({event:"start",offset:t,node:s.childNodes[r]});t=arguments.callee(s.childNodes[r],t);p.push({event:"stop",offset:t,node:s.childNodes[r]})}}}}return t})(q,0);return p}function k(y,w,x){var q=0;var z="";var s=[];function u(){if(y.length&&w.length){if(y[0].offset!=w[0].offset){return(y[0].offset<w[0].offset)?y:w}else{return w[0].event=="start"?y:w}}else{return y.length?y:w}}function t(D){var A="<"+D.nodeName.toLowerCase();for(var B=0;B<D.attributes.length;B++){var C=D.attributes[B];A+=" "+C.nodeName.toLowerCase();if(C.value!==undefined&&C.value!==false&&C.value!==null){A+='="'+m(C.value)+'"'}}return A+">"}while(y.length||w.length){var v=u().splice(0,1)[0];z+=m(x.substr(q,v.offset-q));q=v.offset;if(v.event=="start"){z+=t(v.node);s.push(v.node)}else{if(v.event=="stop"){var p,r=s.length;do{r--;p=s[r];z+=("</"+p.nodeName.toLowerCase()+">")}while(p!=v.node);s.splice(r,1);while(r<s.length){z+=t(s[r]);r++}}}}return z+m(x.substr(q))}function j(){function q(x,y,v){if(x.compiled){return}var u;var s=[];if(x.k){x.lR=f(y,x.l||hljs.IR,true);for(var w in x.k){if(!x.k.hasOwnProperty(w)){continue}if(x.k[w] instanceof Object){u=x.k[w]}else{u=x.k;w="keyword"}for(var r in u){if(!u.hasOwnProperty(r)){continue}x.k[r]=[w,u[r]];s.push(r)}}}if(!v){if(x.bWK){x.b="\\b("+s.join("|")+")\\s"}x.bR=f(y,x.b?x.b:"\\B|\\b");if(!x.e&&!x.eW){x.e="\\B|\\b"}if(x.e){x.eR=f(y,x.e)}}if(x.i){x.iR=f(y,x.i)}if(x.r===undefined){x.r=1}if(!x.c){x.c=[]}x.compiled=true;for(var t=0;t<x.c.length;t++){if(x.c[t]=="self"){x.c[t]=x}q(x.c[t],y,false)}if(x.starts){q(x.starts,y,false)}}for(var p in e){if(!e.hasOwnProperty(p)){continue}q(e[p].dM,e[p],true)}}function d(B,C){if(!j.called){j();j.called=true}function q(r,M){for(var L=0;L<M.c.length;L++){if((M.c[L].bR.exec(r)||[null])[0]==r){return M.c[L]}}}function v(L,r){if(D[L].e&&D[L].eR.test(r)){return 1}if(D[L].eW){var M=v(L-1,r);return M?M+1:0}return 0}function w(r,L){return L.i&&L.iR.test(r)}function K(N,O){var M=[];for(var L=0;L<N.c.length;L++){M.push(N.c[L].b)}var r=D.length-1;do{if(D[r].e){M.push(D[r].e)}r--}while(D[r+1].eW);if(N.i){M.push(N.i)}return f(O,M.join("|"),true)}function p(M,L){var N=D[D.length-1];if(!N.t){N.t=K(N,E)}N.t.lastIndex=L;var r=N.t.exec(M);return r?[M.substr(L,r.index-L),r[0],false]:[M.substr(L),"",true]}function z(N,r){var L=E.cI?r[0].toLowerCase():r[0];var M=N.k[L];if(M&&M instanceof Array){return M}return false}function F(L,P){L=m(L);if(!P.k){return L}var r="";var O=0;P.lR.lastIndex=0;var M=P.lR.exec(L);while(M){r+=L.substr(O,M.index-O);var N=z(P,M);if(N){x+=N[1];r+='<span class="'+N[0]+'">'+M[0]+"</span>"}else{r+=M[0]}O=P.lR.lastIndex;M=P.lR.exec(L)}return r+L.substr(O,L.length-O)}function J(L,M){if(M.sL&&e[M.sL]){var r=d(M.sL,L);x+=r.keyword_count;return r.value}else{return F(L,M)}}function I(M,r){var L=M.cN?'<span class="'+M.cN+'">':"";if(M.rB){y+=L;M.buffer=""}else{if(M.eB){y+=m(r)+L;M.buffer=""}else{y+=L;M.buffer=r}}D.push(M);A+=M.r}function G(N,M,Q){var R=D[D.length-1];if(Q){y+=J(R.buffer+N,R);return false}var P=q(M,R);if(P){y+=J(R.buffer+N,R);I(P,M);return P.rB}var L=v(D.length-1,M);if(L){var O=R.cN?"</span>":"";if(R.rE){y+=J(R.buffer+N,R)+O}else{if(R.eE){y+=J(R.buffer+N,R)+O+m(M)}else{y+=J(R.buffer+N+M,R)+O}}while(L>1){O=D[D.length-2].cN?"</span>":"";y+=O;L--;D.length--}var r=D[D.length-1];D.length--;D[D.length-1].buffer="";if(r.starts){I(r.starts,"")}return R.rE}if(w(M,R)){throw"Illegal"}}var E=e[B];var D=[E.dM];var A=0;var x=0;var y="";try{var s,u=0;E.dM.buffer="";do{s=p(C,u);var t=G(s[0],s[1],s[2]);u+=s[0].length;if(!t){u+=s[1].length}}while(!s[2]);if(D.length>1){throw"Illegal"}return{r:A,keyword_count:x,value:y}}catch(H){if(H=="Illegal"){return{r:0,keyword_count:0,value:m(C)}}else{throw H}}}function g(t){var p={keyword_count:0,r:0,value:m(t)};var r=p;for(var q in e){if(!e.hasOwnProperty(q)){continue}var s=d(q,t);s.language=q;if(s.keyword_count+s.r>r.keyword_count+r.r){r=s}if(s.keyword_count+s.r>p.keyword_count+p.r){r=p;p=s}}if(r.language){p.second_best=r}return p}function i(r,q,p){if(q){r=r.replace(/^((<[^>]+>|\t)+)/gm,function(t,w,v,u){return w.replace(/\t/g,q)})}if(p){r=r.replace(/\n/g,"<br>")}return r}function n(t,w,r){var x=h(t,r);var v=a(t);var y,s;if(v){y=d(v,x)}else{return}var q=c(t);if(q.length){s=document.createElement("pre");s.innerHTML=y.value;y.value=k(q,c(s),x)}y.value=i(y.value,w,r);var u=t.className;if(!u.match("(\\s|^)(language-)?"+v+"(\\s|$)")){u=u?(u+" "+v):v}if(/MSIE [678]/.test(navigator.userAgent)&&t.tagName=="CODE"&&t.parentNode.tagName=="PRE"){s=t.parentNode;var p=document.createElement("div");p.innerHTML="<pre><code>"+y.value+"</code></pre>";t=p.firstChild.firstChild;p.firstChild.cN=s.cN;s.parentNode.replaceChild(p.firstChild,s)}else{t.innerHTML=y.value}t.className=u;t.result={language:v,kw:y.keyword_count,re:y.r};if(y.second_best){t.second_best={language:y.second_best.language,kw:y.second_best.keyword_count,re:y.second_best.r}}}function o(){if(o.called){return}o.called=true;var r=document.getElementsByTagName("pre");for(var p=0;p<r.length;p++){var q=b(r[p]);if(q){n(q,hljs.tabReplace)}}}function l(){if(window.addEventListener){window.addEventListener("DOMContentLoaded",o,false);window.addEventListener("load",o,false)}else{if(window.attachEvent){window.attachEvent("onload",o)}else{window.onload=o}}}var e={};this.LANGUAGES=e;this.highlight=d;this.highlightAuto=g;this.fixMarkup=i;this.highlightBlock=n;this.initHighlighting=o;this.initHighlightingOnLoad=l;this.IR="[a-zA-Z][a-zA-Z0-9_]*";this.UIR="[a-zA-Z_][a-zA-Z0-9_]*";this.NR="\\b\\d+(\\.\\d+)?";this.CNR="\\b(0[xX][a-fA-F0-9]+|(\\d+(\\.\\d*)?|\\.\\d+)([eE][-+]?\\d+)?)";this.BNR="\\b(0b[01]+)";this.RSR="!|!=|!==|%|%=|&|&&|&=|\\*|\\*=|\\+|\\+=|,|\\.|-|-=|/|/=|:|;|<|<<|<<=|<=|=|==|===|>|>=|>>|>>=|>>>|>>>=|\\?|\\[|\\{|\\(|\\^|\\^=|\\||\\|=|\\|\\||~";this.ER="(?![\\s\\S])";this.BE={b:"\\\\.",r:0};this.ASM={cN:"string",b:"'",e:"'",i:"\\n",c:[this.BE],r:0};this.QSM={cN:"string",b:'"',e:'"',i:"\\n",c:[this.BE],r:0};this.CLCM={cN:"comment",b:"//",e:"$"};this.CBLCLM={cN:"comment",b:"/\\*",e:"\\*/"};this.HCM={cN:"comment",b:"#",e:"$"};this.NM={cN:"number",b:this.NR,r:0};this.CNM={cN:"number",b:this.CNR,r:0};this.BNM={cN:"number",b:this.BNR,r:0};this.inherit=function(r,s){var p={};for(var q in r){p[q]=r[q]}if(s){for(var q in s){p[q]=s[q]}}return p}}();hljs.LANGUAGES.cpp=function(){var a={keyword:{"false":1,"int":1,"float":1,"while":1,"private":1,"char":1,"catch":1,"export":1,virtual:1,operator:2,sizeof:2,dynamic_cast:2,typedef:2,const_cast:2,"const":1,struct:1,"for":1,static_cast:2,union:1,namespace:1,unsigned:1,"long":1,"throw":1,"volatile":2,"static":1,"protected":1,bool:1,template:1,mutable:1,"if":1,"public":1,friend:2,"do":1,"return":1,"goto":1,auto:1,"void":2,"enum":1,"else":1,"break":1,"new":1,extern:1,using:1,"true":1,"class":1,asm:1,"case":1,typeid:1,"short":1,reinterpret_cast:2,"default":1,"double":1,register:1,explicit:1,signed:1,typename:1,"try":1,"this":1,"switch":1,"continue":1,wchar_t:1,inline:1,"delete":1,alignof:1,char16_t:1,char32_t:1,constexpr:1,decltype:1,noexcept:1,nullptr:1,static_assert:1,thread_local:1,restrict:1,_Bool:1,complex:1},built_in:{std:1,string:1,cin:1,cout:1,cerr:1,clog:1,stringstream:1,istringstream:1,ostringstream:1,auto_ptr:1,deque:1,list:1,queue:1,stack:1,vector:1,map:1,set:1,bitset:1,multiset:1,multimap:1,unordered_set:1,unordered_map:1,unordered_multiset:1,unordered_multimap:1,array:1,shared_ptr:1}};return{dM:{k:a,i:"</",c:[hljs.CLCM,hljs.CBLCLM,hljs.QSM,{cN:"string",b:"'\\\\?.",e:"'",i:"."},{cN:"number",b:"\\b(\\d+(\\.\\d*)?|\\.\\d+)(u|U|l|L|ul|UL|f|F)"},hljs.CNM,{cN:"preprocessor",b:"#",e:"$"},{cN:"stl_container",b:"\\b(deque|list|queue|stack|vector|map|set|bitset|multiset|multimap|unordered_map|unordered_set|unordered_multiset|unordered_multimap|array)\\s*<",e:">",k:a,r:10,c:["self"]}]}}}();hljs.LANGUAGES.r={dM:{c:[hljs.HCM,{cN:"number",b:"\\b0[xX][0-9a-fA-F]+[Li]?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+(?:[eE][+\\-]?\\d*)?L\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+\\.(?!\\d)(?:i\\b)?",e:hljs.IMMEDIATE_RE,r:1},{cN:"number",b:"\\b\\d+(?:\\.\\d*)?(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\.\\d+(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"keyword",b:"(?:tryCatch|library|setGeneric|setGroupGeneric)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\.",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\d+(?![\\w.])",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\b(?:function)",e:hljs.IMMEDIATE_RE,r:2},{cN:"keyword",b:"(?:if|in|break|next|repeat|else|for|return|switch|while|try|stop|warning|require|attach|detach|source|setMethod|setClass)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"literal",b:"(?:NA|NA_integer_|NA_real_|NA_character_|NA_complex_)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"literal",b:"(?:NULL|TRUE|FALSE|T|F|Inf|NaN)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"identifier",b:"[a-zA-Z.][a-zA-Z0-9._]*\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"<\\-(?!\\s*\\d)",e:hljs.IMMEDIATE_RE,r:2},{cN:"operator",b:"\\->|<\\-",e:hljs.IMMEDIATE_RE,r:1},{cN:"operator",b:"%%|~",e:hljs.IMMEDIATE_RE},{cN:"operator",b:">=|<=|==|!=|\\|\\||&&|=|\\+|\\-|\\*|/|\\^|>|<|!|&|\\||\\$|:",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"%",e:"%",i:"\\n",r:1},{cN:"identifier",b:"`",e:"`",r:0},{cN:"string",b:'"',e:'"',c:[hljs.BE],r:0},{cN:"string",b:"'",e:"'",c:[hljs.BE],r:0},{cN:"paren",b:"[[({\\])}]",e:hljs.IMMEDIATE_RE,r:0}]}};
+hljs.initHighlightingOnLoad();
+</script>
+
+<!-- MathJax scripts -->
+<script type="text/javascript" src="https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 13px;
+}
+
+body {
+  max-width: 800px;
+  margin: auto;
+  line-height: 20px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 { 
+   font-size:2.2em; 
+}
+
+h2 { 
+   font-size:1.8em; 
+}
+
+h3 { 
+   font-size:1.4em; 
+}
+
+h4 { 
+   font-size:1.0em; 
+}
+
+h5 { 
+   font-size:0.9em; 
+}
+
+h6 { 
+   font-size:0.8em; 
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre, img {
+  max-width: 100%;
+}
+
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code {
+  font-size: 92%;
+  border: 1px solid #ccc;
+}
+
+code[class] {
+  background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * { 
+      background: transparent !important; 
+      color: black !important; 
+      filter:none !important; 
+      -ms-filter: none !important; 
+   }
+
+   body { 
+      font-size:12pt; 
+      max-width:100%; 
+   }
+       
+   a, a:visited { 
+      text-decoration: underline; 
+   }
+
+   hr { 
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote { 
+      padding-right: 1em; 
+      page-break-inside: avoid; 
+   }
+
+   tr, img { 
+      page-break-inside: avoid; 
+   }
+
+   img { 
+      max-width: 100% !important; 
+   }
+
+   @page :left { 
+      margin: 15mm 20mm 15mm 10mm; 
+   }
+     
+   @page :right { 
+      margin: 15mm 10mm 15mm 20mm; 
+   }
+
+   p, h2, h3 { 
+      orphans: 3; widows: 3; 
+   }
+
+   h2, h3 { 
+      page-break-after: avoid; 
+   }
+}
+</style>
+
+
+
+</head>
+
+<body>
+<h1>An Introduction to Using GPUs for Computation</h1>
+
+<p>Chris Paciorek, Statistical Computing Facility, Department of Statistics, UC Berkeley</p>
+
+<p>Presented: April 25, 2014</p>
+
+<p>Last Revised: April 16, 2014</p>
+
+<h1>0) This tutorial</h1>
+
+<p>Materials for this tutorial, including the R markdown file that was used to create this document are available on github at <code>https://github.com/berkeley-scf/git-workshop-2014</code>.  You can download the files by doing a git clone:</p>
+
+<pre><code class="clone, eval=FALSE, engine=&#39;bash&#39;">git clone https://github.com/berkeley-scf/gpu-workshop-2014
+</code></pre>
+
+<p>To create this HTML document, simply compile the corresponding R Markdown file in R:</p>
+
+<pre><code class="r">library(knitr)
+knit2html(&quot;gpu.Rmd&quot;)
+</code></pre>
+
+<h1>1) Introduction</h1>
+
+<h3>1.1) Overview</h3>
+
+<p>GPUs (Graphics Processing Units) are processing units originally designed for rendering graphics on a computer quickly. This is done by having a large number of simple processing units for massively parallel calculation. The idea of general purpose GPU (GPGPU) computing is to exploit this capability for general computation. </p>
+
+<p>We&#39;ll see some high-level and somewhat lower-level ways to program calculations for implementation on the GPU. The basic context of GPU programming is &ldquo;data parallelism&rdquo;, in which the same calculation is done to lots of pieces of data. This could be a mathematical calcuation on millions of entries in a vector or a simulation with many independent simulations. Some examples of data parallelism include matrix multiplication (doing the multiplication task on many separate matrix elements) or numerical integration (doing a numerical estimate of the piecewise integral on many intervals/regions), as well as standard statistical calculations such as simulation studies, bootstrapping, random forests, etc.</p>
+
+<h3>1.2) Hardware</h3>
+
+<p>Two of the main suppliers of GPUs are NVIDIA and AMD. <code>CUDA</code> is a platform for programming on GPUs specifically for NVIDIA GPUs that allows you to send C/C++/Fortran code for execution on the GPU.  <code>OpenCL</code> is an alternative that will work with a broader variety of GPUs. However, CUDA is quite popular, and since Amazon EC2 provides NVIDIA GPUs we&#39;ll use CUDA here. </p>
+
+<p>GPUs have many processing units but limited memory. Also, they can only use data in their own memory, not in the CPU&#39;s memory, so one must transfer data back and forth between the CPU (the <code>host</code>) and the GPU (the <code>device</code>). This copying can, in some computations, constitute a very large fraction of the overall computation. So it is best to create the data and/or leave the data (for subsequent calculations) on the GPU when possible and to limit transfers. </p>
+
+<p>The <code>g2.2xlarge</code> Amazon EC2 instance types have 1536 cores and 4 Gb memory. They&#39;re of the <code>Kepler</code> architecture (3rd generation). The 2nd generation was <code>Fermi</code> and the 1st was <code>Tesla</code>. (However note that <code>Tesla</code> is also used by NVIDIA to refer to different chip types, so for example the <code>cg1.4xlarge</code> Amazon EC2 instances have chips that are <code>NVIDIA Tesla M2050 GPUs (&quot;Fermi&quot; GF100)</code>, but are the <code>Fermi</code> architecture.) Originally GPUs supported only single precision (i.e., <code>float</code> calculations) but fortunately they now support double precision operations and all of the examples here will use doubles to avoid potential numerical issues, in particular with linear algebra calculations. </p>
+
+<h4>Demonstration using Amazon&#39;s EC2</h4>
+
+<p>Since the SCF does not have any machines with a GPU, we&#39;ll need to use a cloud-based machine. Amazon&#39;s EC2 provide two types of GPU instances: <code>g2.2xlarge</code> and <code>cg1.4xlarge</code>. The first is more recent, though in some of my tests cg1.4xlarge was actually faster. However given that the price for g2.2xlarge is 65 cents per hour and cg1.4xlarge is more than $2 per hour, we&#39;ll use g2.2xlarge.</p>
+
+<p>I&#39;ve created an Amazon machine image (an AMI) that is the binary representation of the Linux Ubuntu operating system for a machine with support for GPU calculations. The AMI contains the following software and packages: R and RCUDA, Python and PyCUDA, CUDA, and MAGMA.  In other respects the AMI is similar to the SCF and EML Linux machines but with a reduced set of software.</p>
+
+<p>Based on this AMI I&#39;ve started a virtual machine (VM) that we can login to (see below for instructions) via SSH, just like any SCF/EML Linux server.</p>
+
+<p>If you were willing to pay Amazon and had an account you can start a VM (in the Oregon [us-west-2] region) using the SCF AMI by searching for &ldquo;Public Images&rdquo; at the <a href="https://console.aws.amazon.com/ec2/v2/home?region=us-west-2#Images:">EC2 console</a> for <code>scf-gpu_0.3</code>. Then just launch a VM, selecting <code>g2.2xlarge</code> under the <code>GPU instances</code> tab. Alternatively, if you are using StarCluster (e.g., <a href="http://statistics.berkeley.edu/computing/cloud-computation">this tutorial</a> provides some info on using StarCluster with EC2 to start up VMs or clusters of VMs), you can start a VM using the SCF AMI by setting the following in the StarCluster <code>config</code> file:</p>
+
+<pre><code class="starcluster-config, eval=FALSE, engine=&#39;bash&#39;">AWS_REGION_NAME = us-west-2
+AWS_REGION_HOST = ec2.us-west-2.amazonaws.com
+NODE_IMAGE_ID = ami-b0374280 
+NODE_INSTANCE_TYPE = g2.2xlarge
+</code></pre>
+
+<p>Note that the EML (Economics) has a GPU on one of the EML Linux servers that EML users can access. If this is of interest to you, email <a href="mailto:consult@econ.berkeley.edu">consult@econ.berkeley.edu</a>, and I will work to get it set up analogously to the Amazon VM and to help you get started. </p>
+
+<p>And note that Biostatistics has a GPU on one of its servers. Talk to Burke for more information.</p>
+
+<h4>The Amazon VM</h4>
+
+<p>I&#39;ll start up the Amazon VM, calling it <code>gpuvm</code> and ssh to it using my own Starcluster config file:</p>
+
+<pre><code class="start-VM, engine=&#39;bash&#39;">starcluster start -c gpu gpuvm
+starcluster sshmaster -u paciorek gpuvm
+</code></pre>
+
+<p>I also need to make sure that CUDA-related executables are in my path (they should already be set up for the <code>ubuntu</code> default user):</p>
+
+<pre><code class="path, engine=&#39;bash&#39;">export PATH=${PATH}:/usr/local/cuda/bin
+echo &quot;&quot; &gt;&gt; ~/.bashrc
+echo &quot;export PATH=${PATH}:/usr/local/cuda/bin&quot; &gt;&gt; ~/.bashrc
+echo &quot;&quot; &gt;&gt; ~/.bashrc
+echo &quot;alias gtop=\&quot;nvidia-smi -q -g 0 -d UTILIZATION -l 1\&quot;&quot; &gt;&gt; ~/.bashrc
+
+</code></pre>
+
+<p>For the moment, you can connect to the Amazon VM I am using yourself. Here&#39;s what you need to do.</p>
+
+<ul>
+<li>copy the ssh key file, <code>gpu_rsa</code> that SCF provided access to (via email) to your computer (on a UNIX-like machine, including Macs), put it in <code>~/.ssh</code>)</li>
+<li>open a terminal window on a UNIX-alike machine (you might be able to ssh via putty or the like if you can point it to the key file you just copied to your machine) and ssh to the VM as follows, using the IP info provided by SCF (via email):</li>
+</ul>
+
+<pre><code class="ssh, engine=&#39;bash&#39;">export ip=VALUE_OBTAINED_FROM_SCF
+ssh -i ~/.ssh/gpu_rsa ubuntu@${ip}.us-west-2.compute.amazonaws.com
+</code></pre>
+
+<ul>
+<li>since multiple people are sharing this VM and are all logging in as the &#39;ubuntu&#39; user, please make a directory ~/ubuntu/YourUserName and only work within that directory</li>
+</ul>
+
+<h4>Observing Performance on the GPU</h4>
+
+<p>The following command will allow you to see some information analogous to <code>top</code> on the CPU. </p>
+
+<pre><code class="gtop, engine=&#39;bash&#39;">gtop
+</code></pre>
+
+<p>Here&#39;s some example output when the GPU is idle: </p>
+
+<pre><code class="gtop output, engine=&#39;bash&#39;, eval=FALSE">==============NVSMI LOG==============
+
+Timestamp                           : Mon Apr  7 21:15:39 2014
+Driver Version                      : 319.37
+
+Attached GPUs                       : 1
+GPU 0000:00:03.0
+    Utilization
+        Gpu                         : 0 %
+        Memory                      : 0 %
+</code></pre>
+
+<h3>1.4) Software Tools</h3>
+
+<p>Here are some of the useful software tools for doing computations on the GPU.</p>
+
+<ul>
+<li>CUDA - platform for programming on an NVIDIA GPU using C/C++/Fortran code</li>
+<li>CUBLAS - a BLAS implementation for matrix-vector calculations on an NVIDIA GPU</li>
+<li>CURANDOM - random number generation on an NVIDIA GPU</li>
+<li>MAGMA - a package for combined CPU-GPU linear algebra, intended to be analogous to LAPACK + BLAS</li>
+<li>RCUDA - an R package providing a front-end for CUDA</li>
+<li>R&#39;s magma package - a front-end for MAGMA</li>
+<li>PyCUDA - a Python package providing a front-end for CUDA</li>
+</ul>
+
+<p>Note that RCUDA is still in development and is on Github, but should be high-quality as it is developed by Duncan Temple Lang at UC-Davis.</p>
+
+<p>We&#39;ll see all of these in action.</p>
+
+<p>There is also</p>
+
+<ul>
+<li>openCL - an alternative to CUDA that can also be used with non-NVIDIA GPUs</li>
+<li>PyOpenCL</li>
+<li>R&#39;s OpenCL package</li>
+</ul>
+
+<h4>A Note on Synchronization</h4>
+
+<p>Note that in the various examples when I want to assess computational time, I make sure to synchronize the GPU via an appropriate function call. This ensures that all of the kernels have finished their calculations before I mark the end of the time interval. In general a function call to do a calculation on the GPU will simply start the calculation and then return, with the calculation continuing on the GPU.</p>
+
+<h1>2) Linear Algebra on the GPU</h1>
+
+<p>We&#39;ll start with very high-level use of the GPU by simply calling linear algebra routines that use the GPU. The simplest approach for this is to use R&#39;s <code>magma</code> package.</p>
+
+<h3>2.1) Using MAGMA via R</h3>
+
+<p>The MAGMA library provides a drop-in for the functionality of the BLAS and LAPACK that carries out linear algebra on both the CPU and GPU, choosing smartly where to do various aspects of the calculation.</p>
+
+<p>R&#39;s magma package provides a front-end to MAGMA, with functionality for arithmetic operations, backsolve, matrix multiplication, Cholesky, inverse, crossproduct, LU, QR, and solve. See <code>help(&quot;magma-class&quot;)</code> for a list, as <code>library(help = magma)</code> only lists a few of the functions in the package.</p>
+
+<p>[Note for Demo: As we run the calculations on the GPU, let&#39;s look at the computation with our gtop utility.]</p>
+
+<p>Here&#39;s the <a href="https://github.com/berkeley-scf/gpu-workshop-2014/blob/master/RmagmaExample.R">example code (RmagmaExample.R on the github repository)</a>.</p>
+
+<p>Note that we have the interface set to be <code>GPU</code> which means we handle the transfer of objects to the GPU&#39;s memory manually rather than calling a function directly on the object on the CPU. </p>
+
+<p>Here are some timing results:</p>
+
+<pre><code class="magma-R-output, eval=FALSE, engine=&#39;bash&#39;">Timing for n= 4096 
+GPU time:  3.27
+CPU time:  5.92 
+Timing for n= 8192 
+GPU time:  20.19 
+CPU time:  47.04
+Check for use of double precision empirically
+[1] 0.000000000000000e+00 8.185452315956354e-11
+[1] 8433.16034596550344  -20.63245489979067   13.58046013130892
+[1] 8433.16034596551981  -20.63245489979058   13.58046013130881
+</code></pre>
+
+<p>Remember to be careful of memory use as GPU&#39;s memory may be limited (on the EC2 instance, it&#39;s 4 Gb).</p>
+
+<h3>2.2) Using C to call CUDA, CUDABLAS, and MAGMA</h3>
+
+<p>Next let&#39;s use CUDA and MAGMA calls directly in C code. Both CUDA (through CUDABLAS) and MAGMA provide access to BLAS functionality, but only MAGMA provides LAPACK-like functionality (i.e., matrix factorizations/decompositions). Note that we&#39;ll now need to directly manage memory allocation on the GPU and transferring data back and forth from CPU to GPU.</p>
+
+<h4>CUDA and CUDABLAS</h4>
+
+<p>The code doesn&#39;t look too different than C code or calls to BLAS/LAPACK, but we use some CUDA functions and CUDA types. Here&#39;s the <a href="https://github.com/berkeley-scf/gpu-workshop-2014/blob/master/cudaBlasExample.c">example code (cudaBlasExample.c on the github repo)</a>.</p>
+
+<p>Compilation goes as follows using <code>nvcc</code>, the analog to <code>gcc</code> when compiling for the GPU. As when compiling standard C code we need to be careful about compiler flags, header files, and linking. Note that in this case nvcc does not want the file to have .C or .cu extension. </p>
+
+<pre><code class="cuda-compile, eval=FALSE, engine=&#39;bash&#39;">nvcc cudaBlasExample.c -I/usr/local/cuda/include -lcublas -o cudaBlasExample
+</code></pre>
+
+<p>And here are (some of) the results:</p>
+
+<pre><code class="cudaBlas-example-output, eval=FALSE, engine=&#39;bash&#39;">Starting
+====================================================
+Timing results for n = 512
+GPU memory allocation time: 0.001930
+Transfer to GPU time: 0.000777
+Matrix multiply time: 0.003121
+Transfer from GPU time: 0.001484
+====================================================
+Timing results for n = 4096
+GPU memory allocation time: 0.002925
+Transfer to GPU time: 0.040283
+Matrix multiply time: 1.476518
+Transfer from GPU time: 0.144702
+====================================================
+Timing results for n = 8192
+GPU memory allocation time: 0.002807
+Transfer to GPU time: 0.159034
+Matrix multiply time: 11.807786
+Transfer from GPU time: 0.535246
+</code></pre>
+
+<p>For (rough) comparison, the \(n=8192\) multiplication on one of the SCF cluster nodes in R (using ACML as the BLAS) takes 74 seconds with one core and 11 seconds with 8 cores.</p>
+
+<h4>MAGMA</h4>
+
+<p>Now let&#39;s see the use of MAGMA. MAGMA provides analogous calls as CUDA/CUDABLAS for allocating memory, transferring data, and BLAS calls, as well as LAPACK type calls. Unfortunately the MAGMA documentation online appears to be seriously out-of-date, documenting version 0.2 whereas the current version of the software is 1.4.0.</p>
+
+<p>Note that the LAPACK type calls have a CPU interface and a GPU interface. The GPU interface calls have function names ending in &#39;_gpu&#39; and operate on data objects in GPU memory. The CPU interface calls operate on data objects in CPU memory, handling the transfer to GPU memory as part of the calculation.</p>
+
+<p>Also, one can use &#39;pinned&#39; memory on the CPU, which can reduce the transfer time for data to and from the GPU. However, it can involve an increase in time for doing the original memory allocation on the CPU. In the example I can control which is used.</p>
+
+<p>Here we&#39;ll compare timing for the GPU vs. standard BLAS/LAPACK as well as the CPU and GPU interfaces for the Cholesky.</p>
+
+<p>Here&#39;s the <a href="https://github.com/berkeley-scf/gpu-workshop-2014/blob/master/magmaExample.c">example code (magmaExample.c on the github repo)</a>.</p>
+
+<p>Compilation and execution (with and without pinned memory) go as follows. Note we can use gcc and that we need to link in the CPU BLAS and LAPACK since MAGMA uses both CPU and GPU for calculations (plus in this example I directly call BLAS and LAPACK functions).</p>
+
+<pre><code class="magma-compile, eval=FALSE, engine=&#39;bash&#39;">gcc magmaExample.c -O3 -DADD_ -fopenmp  -DHAVE_CUBLAS -I/usr/local/cuda/include \
+   -I/usr/local/magma/include -L/usr/local/cuda/lib64 -L/usr/local/magma/lib -lmagma \
+   -llapack -lblas -lcublas -o magmaExample
+./magmaExample 1
+./magmaExample 0
+</code></pre>
+
+<p>And here are (some of) the results:</p>
+
+<pre><code class="magma-example-output, eval=FALSE, engine=&#39;bash&#39;">Starting
+Setting use_pinned to 1
+====================================================
+Timing results for n = 512
+GPU memory allocation time: 0.001107
+Transfer to GPU time: 0.000235
+Matrix multiply time (GPU): 0.002965
+Matrix multiply time (BLAS): 0.025640
+Cholesky factorization time (GPU w/ GPU interface): 0.006872
+Cholesky factorization time (GPU w/ CPU interface): 0.006856
+Cholesky factorization time (LAPACK): 0.004908
+Transfer from GPU time: 0.000252
+====================================================
+Timing results for n = 4096
+GPU memory allocation time: 0.001535
+Transfer to GPU time: 0.014882
+Matrix multiply time (GPU): 1.471109
+Matrix multiply time (BLAS): 9.641088
+Cholesky factorization time (GPU w/ GPU interface): 0.303083
+Cholesky factorization time (GPU w/ CPU interface): 0.316703
+Cholesky factorization time (LAPACK): 1.537566
+Transfer from GPU time: 0.016509
+./magmaExample 0
+====================================================
+Timing results for n = 8192
+GPU memory allocation time: 0.004967
+Transfer to GPU time: 0.063750
+Matrix multiply time (GPU): 11.766860
+Matrix multiply time (BLAS): 77.529439
+Cholesky factorization time (GPU w/ GPU interface): 2.126884
+Cholesky factorization time (GPU w/ CPU interface): 2.161343
+Cholesky factorization time (LAPACK): 12.017636
+Transfer from GPU time: 0.072997
+
+Setting use_pinned to 0
+====================================================
+Timing results for n = 512
+GPU memory allocation time: 0.002136
+Transfer to GPU time: 0.001055
+Matrix multiply time (GPU): 0.002969
+Matrix multiply time (BLAS): 0.029986
+Cholesky factorization time (GPU w/ GPU interface): 0.009177
+Cholesky factorization time (GPU w/ CPU interface): 0.011693
+Cholesky factorization time (LAPACK): 0.004929
+Transfer from GPU time: 0.002238
+====================================================
+Timing results for n = 4096
+GPU memory allocation time: 0.002929
+Transfer to GPU time: 0.056978
+Matrix multiply time (GPU): 1.471277
+Matrix multiply time (BLAS): 9.951325
+Cholesky factorization time (GPU w/ GPU interface): 0.308102
+Cholesky factorization time (GPU w/ CPU interface): 0.356540
+Cholesky factorization time (LAPACK): 1.551262
+Transfer from GPU time: 0.136033
+====================================================
+Timing results for n = 8192
+GPU memory allocation time: 0.004951
+Transfer to GPU time: 0.226058
+Matrix multiply time (GPU): 11.767153
+Matrix multiply time (BLAS): 78.473712
+Cholesky factorization time (GPU w/ GPU interface): 2.125327
+Cholesky factorization time (GPU w/ CPU interface): 2.286922
+Cholesky factorization time (LAPACK): 12.059586
+Transfer from GPU time: 0.545454
+
+</code></pre>
+
+<p>So we see decent speed-ups both for the matrix multiplication and the Cholesky factorization. In addition, using the CPU interface seems to provide a modest speedup (compared to the manual transfer + calculation time) as does using pinned memory. Note that the transfer time is non-negligible in certain ways (but not all ways) in this example.</p>
+
+<h1>3) Using Kernels for Parallel Computation</h1>
+
+<p>Kernels are functions that encode the core computational operations done on individual pieces of data. The basic mode of operation in this Section will be to write a kernel and then call the kernel on all the elements of a data object via C, R, or Python code. As we&#39;ve already seen, We&#39;ll need to pass the data from the CPU to the GPU and do the same in reverse to get the result. We&#39;ll also need to allocate memory on the GPU. However in some cases the transfer and allocation will be done automatically behind the scenes.</p>
+
+<h3>3.1) Background:</h3>
+
+<h4>Threads and Grids</h4>
+
+<p>Each individual computation or series of computations on the GPU is done in a thread. Threads are organized into blocks and blocks of threads are organized in a grid. The blocks and grids can be 1-, 2-, or 3-dimensional. E.g., you might have a 1-d block of 500 threads, with a grid of 3 x 3 such blocks, for a total of \(500 \times 9 = 4500\) threads. The choice of the grid/block arrangement can affect efficiency. I can&#39;t provide much guidance on that so you&#39;d need to experiment or do some additional research. For our purposes, we&#39;ll often use a 2-d grid of 1-d blocks. In general you&#39;d want each independent calculation done in a separate thread, though as we&#39;ll see in Section 4 on simulation, one might want to do a sequence of calculations on each thread. In general, you&#39;ll want to pipeline together multiple operations within a computation to avoid copying from CPU to GPU and back. Alternatively, this can be done by keeping the data on the GPU and calling a second kernel. </p>
+
+<p>Threads are quick to start, and to get efficiency you want to have thousands of threads to exploit the parallelism of the GPU hardware. In general your calculations will have more threads than GPU cores.</p>
+
+<p>This can all get quite complicated, with the possibility for communication amongst threads. We won&#39;t go into this, but threads within a block share memory (distinct from the main GPU memory) and can synchronize with each other, while threads in different blocks cannot cooperate. </p>
+
+<p>Executing the following code as root will create an executable that will show you details on the GPU, including the possible block and grid dimensions. </p>
+
+<pre><code class="deviceQuery, engine=&#39;bash&#39;, eval=FALSE">cd  /usr/local/cuda/samples/1_Utilities/deviceQuery
+nvcc deviceQuery.cpp -I/usr/local/cuda/include \
+   -I/usr/local/cuda-5.5/samples/common/inc -o /usr/local/cuda/bin/deviceQuery
+cd -
+</code></pre>
+
+<p>Now running <code>deviceQuery</code> will show output like the following (on the SCF VM):</p>
+
+<pre><code class="deviceQuery output, engine=&#39;bash&#39;, eval=FALSE">paciorek@master:~$ deviceQuery
+deviceQuery Starting...
+
+ CUDA Device Query (Runtime API) version (CUDART static linking)
+
+Detected 1 CUDA Capable device(s)
+
+Device 0: &quot;GRID K520&quot;
+  CUDA Driver Version / Runtime Version          5.5 / 5.5
+  CUDA Capability Major/Minor version number:    3.0
+  Total amount of global memory:                 4096 MBytes (4294770688 bytes)
+  ( 8) Multiprocessors, (192) CUDA Cores/MP:     1536 CUDA Cores
+  GPU Clock rate:                                797 MHz (0.80 GHz)
+  Memory Clock rate:                             2500 Mhz
+  Memory Bus Width:                              256-bit
+  L2 Cache Size:                                 524288 bytes
+  Maximum Texture Dimension Size (x,y,z)         1D=(65536), 2D=(65536, 65536), 3D=(4096, 4096, 4096)
+  Maximum Layered 1D Texture Size, (num) layers  1D=(16384), 2048 layers
+  Maximum Layered 2D Texture Size, (num) layers  2D=(16384, 16384), 2048 layers
+  Total amount of constant memory:               65536 bytes
+  Total amount of shared memory per block:       49152 bytes
+  Total number of registers available per block: 65536
+  Warp size:                                     32
+  Maximum number of threads per multiprocessor:  2048
+  Maximum number of threads per block:           1024
+  Max dimension size of a thread block (x,y,z): (1024, 1024, 64)
+  Max dimension size of a grid size    (x,y,z): (2147483647, 65535, 65535)
+  Maximum memory pitch:                          2147483647 bytes
+  Texture alignment:                             512 bytes
+  Concurrent copy and kernel execution:          Yes with 2 copy engine(s)
+  Run time limit on kernels:                     No
+  Integrated GPU sharing Host Memory:            No
+  Support host page-locked memory mapping:       Yes
+  Alignment requirement for Surfaces:            Yes
+  Device has ECC support:                        Disabled
+  Device supports Unified Addressing (UVA):      Yes
+  Device PCI Bus ID / PCI location ID:           0 / 3
+  Compute Mode:
+     &lt; Default (multiple host threads can use ::cudaSetDevice() with device simultaneously) &gt;
+
+deviceQuery, CUDA Driver = CUDART, CUDA Driver Version = 5.5, CUDA Runtime Version = 5.5, NumDevs = 1, Device0 = GRID K520
+Result = PASS
+</code></pre>
+
+<p>In particular note the information on the number of CUDA cores, the GPU&#39;s memory, and the information on the maximum threads per block and the maximum dimensions of thread blocks and grids.</p>
+
+<h4>GPU Calculations and Kernels</h4>
+
+<p>The basic series of operations is:</p>
+
+<ul>
+<li>allocate memory on the GPU</li>
+<li>transfer data from CPU to GPU</li>
+<li>launch the kernel to operate on the threads, with a given block/grid arrangement</li>
+<li>[optionally] launch another kernel, which can access data stored on the GPU, including results from the previous kernel</li>
+<li>transfer results back to CPU</li>
+</ul>
+
+<p>Some of this is obscured because CUDA, RCUDA, and PyCUDA do some of the work for you (and also obscured if you use pinned memory).</p>
+
+<p>When we write a kernel, we will need to have some initial code that determines a unique ID for that thread  that allows the thread to access the appropriate part(s) of the data object(s) on the GPU. This is done based on information stored in variables that CUDA provides that have information about the thread and block indices and block and grid dimensions.</p>
+
+<h3>3.2) Using CUDA directly</h3>
+
+<h4>Hello, world</h4>
+
+<p>First let&#39;s see a &#39;Hello, World&#39; example that illustrates blocks of threads and grids of blocks.</p>
+
+<p>The idea is to have at least as many threads as the number of computations you are doing. Our kernel function contains the core calculation we want to do (in this case printing &#39;Hello world!&#39; and code that figures out the unique ID of each thread, as this is often used within a calculation.</p>
+
+<p>Here&#39;s the <a href="https://github.com/berkeley-scf/gpu-workshop-2014/blob/master/helloWorld.cu">example code (helloWorld.cu on the github repo)</a>.</p>
+
+<p>In this case, compilation is as follows. Given the CUDA functionality used in the code (in particular the call to <code>printf</code> within the kernel), we need to specify compilation for a <code>compute capability</code> &gt; 2.0 (corresponding to the Fermi generation of NVIDIA GPUs).</p>
+
+<pre><code class="helloWorld-compile, engine=&#39;bash&#39;, eval=FALSE">nvcc helloWorld.cu -arch=compute_20 -code=sm_20,compute_20 -o helloWorld
+</code></pre>
+
+<p>The result of this looks like:</p>
+
+<pre><code class="helloWorld-output, eval=FALSE, engine=&#39;bash&#39;">Launching 20480 threads (N=20000)
+Hello world! My block index is (3,0) [Grid dims=(20,2)], 3D-thread index within block=(448,0,0) =&gt; thread index=1984
+Hello world! My block index is (3,0) [Grid dims=(20,2)], 3D-thread index within block=(449,0,0) =&gt; thread index=1985
+Hello world! My block index is (3,0) [Grid dims=(20,2)], 3D-thread index within block=(450,0,0) =&gt; thread index=1986
+....
+
+Hello world! My block index is (19,1) [Grid dims=(20,2)], 3D-thread index within block=(220,0,0) =&gt; thread index=20188 
+[### this thread would not be used for N=20000 ###]
+Hello world! My block index is (19,1) [Grid dims=(20,2)], 3D-thread index within block=(221,0,0) =&gt; thread index=20189 
+[### this thread would not be used for N=20000 ###]
+Hello world! My block index is (19,1) [Grid dims=(20,2)], 3D-thread index within block=(222,0,0) =&gt; thread index=20190 
+[### this thread would not be used for N=20000 ###]
+Hello world! My block index is (19,1) [Grid dims=(20,2)], 3D-thread index within block=(223,0,0) =&gt; thread index=20191 
+[### this thread would not be used for N=20000 ###]
+kernel launch success!
+That&#39;s all!
+</code></pre>
+
+<p>Note that because of some buffering issues, with this many threads, we can&#39;t see the output for all of them, hence the <code>if</code> statement in the kernel code. It is possible to retrieve info about the limit and change the limit using <code>cudaDeviceGetLimit()</code> and <code>cudaDeviceSetLimit()</code>.</p>
+
+<h4>Example of a &#39;Real&#39; Computation</h4>
+
+<p>Now let&#39;s see an example of a distributed calculation using CUDA code, including memory allocation on the GPU and transfer between the GPU and CPU. Our example will be computing terms in an IID log-likelihood calculation. In this case we&#39;ll just use the normal density, but real applications would of course have more involved calculation.</p>
+
+<p>Note that here, I&#39;ll use 1024 (the maximum based on <code>deviceQuery</code>) threads per block and then a grid (2-d for simplicity) sufficiently large so that we have at least as many threads as computational chunks. </p>
+
+<p>Here&#39;s the <a href="https://github.com/berkeley-scf/gpu-workshop-2014/blob/master/kernelExample.cu">code (kernelExample.cu on the github repo)</a>.</p>
+
+<p>Compilation is as follows. We again need to specify a compute capability &gt; 2.0, in this case in order to do calculations with doubles rather than floats.</p>
+
+<pre><code class="kernelExample-compile, engine=&#39;bash&#39;, eval=FALSE">nvcc kernelExample.cu -arch=compute_20 -code=sm_20,compute_20 -o kernelExample
+</code></pre>
+
+<p>Here are some results:</p>
+
+<pre><code class="kernelExample-output, eval=FALSE, engine=&#39;bash&#39;">====================================================
+Grid dimension is 46 x 46
+Launching 2166784 threads (N=2097152)
+Input values: -0.658344 0.499804 -0.807257...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.321214 0.352100 0.288007...
+Output values (CPU): 0.321214 0.352100 0.288007...
+Timing results for n = 2097152
+Transfer to GPU time: 0.008920
+Calculation time (GPU): 0.001766
+Calculation time (CPU): 0.070951
+Transfer from GPU time: 0.001337
+Freeing memory...
+====================================================
+...
+====================================================
+Grid dimension is 363 x 363
+Launching 134931456 threads (N=134217728)
+Input values: -0.658344 0.499804 -0.807257...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.321214 0.352100 0.288007...
+Output values (CPU): 0.321214 0.352100 0.288007...
+Timing results for n = 134217728
+Transfer to GPU time: 0.556857
+Calculation time (GPU): 0.110254
+Calculation time (CPU): 4.605744
+Transfer from GPU time: 0.068865
+Freeing memory...
+====================================================
+</code></pre>
+
+<p>We see that the time for transferring to and from (particularly to) the GPU exceeds the calculation time, reinforcing the idea of keeping data on the GPU when possible. </p>
+
+<h4>Using Pinned Memory</h4>
+
+<p>Here&#39;s some code where we use pinned memory that is &#39;mapped&#39; to the GPU such that the GPU directly accesses CPU memory. This can be advantageous if one exceeds the GPU&#39;s memory and, according to some sources, is best when you load the data only once. Another approach, using pinned but not mapped memory allows for more efficient transfer but without the direct access from the GPU, with a hidden transfer done behind the scenes. This may be better if the data is loaded multiple times on the GPU.</p>
+
+<p>Here&#39;s the <a href="https://github.com/berkeley-scf/gpu-workshop-2014/blob/master/kernelExample-pinned.cu">code (kernelExample-pinned.cu on the github repo)</a>.</p>
+
+<p>Here are some results:</p>
+
+<pre><code class="kernelExample-pinned-output, eval=FALSE, engine=&#39;bash&#39;">====================================================
+Grid dimension is 46 x 46
+Launching 2166784 threads (N=2097152)
+Input values: -0.658344 0.499804 -0.807257...
+Output values: 0.321214 0.352100 0.288007...
+Output values (CPU): 0.321214 0.352100 0.288007...
+Timing results for n = 2097152
+Calculation time (GPU): 0.002080
+Calculation time (CPU): 0.071038
+Freeing memory...
+====================================================
+...
+====================================================
+Grid dimension is 363 x 363
+Launching 134931456 threads (N=134217728)
+Input values: -0.658344 0.499804 -0.807257...
+Output values: 0.321214 0.352100 0.288007...
+Output values (CPU): 0.321214 0.352100 0.288007...
+Timing results for n = 134217728
+Calculation time (GPU): 0.255367
+Calculation time (CPU): 4.635453
+Freeing memory...
+====================================================
+</code></pre>
+
+<p>So using pinned mapped memory seems to help quite a bit in this case, as the total time with pinned memory is less than the time used for transfer plus calculation in the previous examples.</p>
+
+<h3>3.2) Calling CUDA Kernels from R (RCUDA)</h3>
+
+<p>When we want to use CUDA from R, the kernel function will remain the same, but the pre- and post-processing is done in R rather than in C. Here&#39;s an example, with the same log-likelihood kernel. The CUDA kernel code is saved in a separate file but is identical to that in the full CUDA+C example above (with the exception that we need to wrap the kernel function in <code>extern &quot;C&quot;</code>).</p>
+
+<pre><code class="RCUDAexample, eval=FALSE">// RCUDAexample.R
+</code></pre>
+
+<p>In this example we see that we can either transfer data between CPU and GPU manually or have RCUDA do it for us. If we didn&#39;t want to overwrite the input, but rather to allocate space for the output on the GPU, we could use <code>cudaAlloc()</code>.  See <code>help(.cuda)</code> for some example code.</p>
+
+<p>We need to compile the kernel into a ptx object file, either outside of R:</p>
+
+<pre><code class="RCUDAexample-compile, engine=&#39;bash&#39;, eval=FALSE">nvcc --ptx  -arch=compute_20 -code=sm_20,compute_20 -o calc_loglik.ptx calc_loglik.cu
+</code></pre>
+
+<p>or inside of R:</p>
+
+<pre><code class="RCUDAexample-compile-inR, engine=&#39;R&#39;, eval=FALSE">ptx = nvcc(file = &#39;calc_loglik.cu&#39;, out = &#39;calc_loglik.ptx&#39;, target = &#39;ptx&#39;, &#39;-arch=compute_20&#39;, &#39;-code=sm_20,compute_20&#39;)
+</code></pre>
+
+<p>Here are some results:</p>
+
+<pre><code class="RCUDAexample-output, eval=FALSE, engine=&#39;bash&#39;">Setting cuGetContext(TRUE)...
+Grid size:
+[1] 363 363   1
+Total number of threads to launch =  134931456 
+Running CUDA kernel...
+Input values:  0.8966972 0.2655087 0.3721239 
+Output values:  0.2457292 0.2658912 0.2656543 
+Output values (implicit transfer):  0.2457292 0.2658912 0.2656543 
+Output values (CPU with R):  0.2457292 0.2658912 0.2656543 
+Transfer to GPU time:  0.374 
+Calculation time (GPU):  0.078 
+Transfer from GPU time:  0.689 
+Calculation time (CPU):  9.981 
+Combined calculation+transfer via .cuda time (GPU):  4.303 
+</code></pre>
+
+<p>So the transfer time is again substantial in relative terms. Without that time, the speedup would be substantial. Strangely the streamlined call in which RCUDA handles the transfer is quite a bit slower for reasons that are not clear to me, but the RCUDA developer (Duncan Temple Lang at UC Davis) is looking into this.</p>
+
+<p>We can avoid explicitly specifying block and grid dimensions by using the <code>gridBy</code> argument to <code>.cuda</code>, which we&#39;ll see in a later example.</p>
+
+<p>WARNING #1: be very careful that the types of the R objects passed to the kernel match what the kernel is expecting. Otherwise the code can hang without an informative error message</p>
+
+<p>WARNING #2: Note the use of the <code>strict=TRUE</code> argument when passing values to the GPU. This ensures that numeric values are kept as doubles and not coerced to floats. </p>
+
+<h3>3.3) Calling CUDA Kernels from Python plus GPU-vectorized Calculations (PyCUDA)</h3>
+
+<p>Here the kernel code can be embedded in the Python script. Otherwise it&#39;s fairly similar to the use of RCUDA.</p>
+
+<pre><code class="PyCUDAexample, engine = &#39;python&#39;, eval=FALSE">// PyCUDAexample.py
+</code></pre>
+
+<p>Here are the results
+Here are some results:</p>
+
+<pre><code class="PyCUDAexample-output, eval=FALSE, engine=&#39;bash&#39;">Generating random normals...
+Running GPU code...
+Time for calculation (GPU): 0.822662s
+Time for calculation (CPU): 21.522281s
+Output from GPU: 0.251608 0.229542 0.218257
+Output from CPU: 0.251608 0.229542 0.218257
+</code></pre>
+
+<p>PyCUDA also provides high-level functionality for vectorized calculations on the GPU. Basically you create a vector stored in GPU memory and then operate on it with a variety of mathematical functions. The module that do this are <code>gpuarray</code> and <code>cumath</code>.</p>
+
+<p>Here are some examples.</p>
+
+<pre><code class="gpuArrayExample, engine = &#39;python&#39;, eval=FALSE">// gpuArrayExample.py
+</code></pre>
+
+<p>Here are the timing results. The exponentiation shows a decent speedup, but the dot product does not.</p>
+
+<pre><code class="gpuArrayExample-output, eval=FALSE, engine=&#39;bash&#39;">Transfer to GPU time: 0.529110s
+Timing vectorized exponentiation:
+GPU array calc time: 0.200997s
+CPU calc time: 3.135706s
+Timing vectorized dot product/sum of squares:
+GPU array calc time: 0.245807s
+CPU calc time: 0.103340s
+</code></pre>
+
+<h1>4) Random Number Generation on the GPU</h1>
+
+<h3>4.1) Seeds</h3>
+
+<p>From the CUDA documentation:</p>
+
+<p><code>For the highest quality parallel pseudorandom number generation, each experiment should be assigned a unique seed. Within an experiment, each thread of computation should be assigned a unique sequence number. If an experiment spans multiple kernel launches, it is recommended that threads between kernel launches be given the same seed, and sequence numbers be assigned in a monotonically increasing way. If the same configuration of threads is launched, random state can be preserved in global memory between launches to avoid state setup time.</code></p>
+
+<p>A lot of important info&hellip; we&#39;ll interpret/implement much of it in the demo below.</p>
+
+<p>Recall that RNG on a computer involves periodic generation from a deterministic, periodic sequence. The seed determines where one starts generating from within that sequence. The idea of the sequence numbers is to generate from non-overlapping blocks within the sequence, with each thread getting a different block.  </p>
+
+<h3>4.2) Calling CURAND via RCUDA</h3>
+
+<p>Here&#39;s the code for the kernels we need. We need a kernel to initialize the RNG on each thread and one to do the sampling (though they could be combined in a single kernel). Note that the time involved in initializing the RNG for each thread is substantial. This shouldn&#39;t be a problem if one is doing a lot of calculations over time. To amortize this one-time expense, I generate multiple random numbers per thread.</p>
+
+<pre><code class="RNGexample-kernel, eval=FALSE">// random.cu
+</code></pre>
+
+<p>Here&#39;s the R code to call the kernel, which looks very similar to the RCUDA code we&#39;ve already seen.</p>
+
+<pre><code class="RNGexample-R, eval=FALSE">// RNGexample.R
+</code></pre>
+
+<p>We get a pretty good speed up, which would be even more impressive if we can set up the calculations such that we don&#39;t need to transfer the whole large vector back to the CPU.</p>
+
+<pre><code class="RNGexample-output, eval=FALSE, engine=&#39;bash&#39;">RNG initiation time:  0.115 
+GPU memory allocation time:  0.003 
+Calculation time (GPU):  0.256 
+Transfer from GPU time:  0.501 
+--------------------------------------
+Total time (GPU): 0.875
+--------------------------------------
+Calculation time (CPU):  9.963 
+</code></pre>
+
+<p>Also note the memory cost of the RNG states for the threads, 48 bytes per thread, which could easily exceed GPU memory if one starts up many threads. </p>
+
+<p>One more note on RCUDA: we can have RCUDA decide on the gridding. Here&#39;s a modification of the RNG example to do this:</p>
+
+<pre><code class="gridBy, eval=FALSE">.cuda(rnorm, rng_states, dX, N, mu, sigma, N_per_thread, gridBy = nthreads, .numericAsDouble = getOption(&quot;CUDA.useDouble&quot;, TRUE))
+</code></pre>
+
+<h3>4.3) Calling CURAND from directly in C and from Python</h3>
+
+<p>I may flesh this out at some point, but by looking at the RNG example via RCUDA and the examples of calling kernels from C and Python in the previous section, it should be straightforward to do RNG on the GPU controlled by C or Python.</p>
+
+<h1>5) Some Final Comments and Cautions</h1>
+
+<ul>
+<li><p>If you compile CUDA code into an object file, you can link that with other object files (e.g., from C or C++ code) into an executable that can operate on CPU and GPU. This also means you could compile a shared object (i.e., a library)  that you could call from R with .C, .Call, or Rcpp. </p></li>
+<li><p>Make sure that the types you pass from R or Python exactly match the types expected by the CUDA kernel. Hard-to-understand errors can otherwise result.</p></li>
+</ul>
+
+</body>
+
+</html>

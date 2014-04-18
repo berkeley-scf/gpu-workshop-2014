@@ -66,10 +66,11 @@ int main (int argc, char *argv[]) {
  
   printf("====================================================\n");
   for( N = 32768; N <= 134217728; N*=8 ) {
+    // allocated pinned and mapped memory on CPU
     cudaSetDeviceFlags(cudaDeviceMapHost);
     cudaHostAlloc((void**)&cpu_vals, N*sizeof(double), cudaHostAllocMapped);
-    //cudaHostAlloc((void**)&cpu_vals, N*sizeof(double), cudaHostAllocMapped);
 
+    // map the CPU storage to the GPU to the CPU storage
     cudaStat = cudaHostGetDevicePointer(&gpu_vals, cpu_vals, 0);
 
     const dim3 blockSize(BLOCK_D1, BLOCK_D2, BLOCK_D3);
