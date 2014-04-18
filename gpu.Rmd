@@ -434,16 +434,14 @@ Note that because of some buffering issues, with this many threads, we can't see
 
 #### Example of a 'Real' Computation
 
-Now let's see an example of a distributed calculation using CUDA code, including memory allocation on the GPU and transfer between the GPU and CPU. Our example will be computing terms in an IID log-likelihood calculation. In this case we'll just use the normal density, but real applications would of course involve a more involved calculation.
+Now let's see an example of a distributed calculation using CUDA code, including memory allocation on the GPU and transfer between the GPU and CPU. Our example will be computing terms in an IID log-likelihood calculation. In this case we'll just use the normal density, but real applications would of course have more involved calculation.
 
-Note that here, I'll use 1024 (the maximum based on `deviceQuery`) threads per block and then a grid (2-d for simplicity) sufficiently large so that we have more threads than computational chunks. 
+Note that here, I'll use 1024 (the maximum based on `deviceQuery`) threads per block and then a grid (2-d for simplicity) sufficiently large so that we have at least as many threads as computational chunks. 
 
-```{kernelExample, eval=FALSE, engine='c'}
-// kernelExample.cu
+Here's the [code (kernelExample.cu on the github repo)](https://github.com/berkeley-scf/gpu-workshop-2014/blob/master/kernelExample.cu).
 
-```
 
-Compilation is as follows. In this case, we need to specify a compute capability > 2.0 in order to do calculations with doubles rather than floats.
+Compilation is as follows. We again need to specify a compute capability > 2.0, in this case in order to do calculations with doubles rather than floats.
 
 
 ```{kernelExample-compile, engine='bash', eval=FALSE}
