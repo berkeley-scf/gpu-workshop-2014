@@ -61,9 +61,11 @@ int main( int argc, char **argv ) {
   for( size = 256; size <= 8192; size*=2 ) {
  
      if(use_pinned) {
+       // allocate pinned memory on CPU
        err = magma_dmalloc_pinned( &A,  size*size );  assert( err == 0 );
        err = magma_dmalloc_pinned( &B,  size*size );  assert( err == 0 );
      } else {
+       // allocate standard memory on CPU
        A = (double*) malloc( sizeof(double)*size*size );
        B = (double*) malloc( sizeof(double)*size*size );
      }
@@ -71,6 +73,7 @@ int main( int argc, char **argv ) {
     cudaDeviceSynchronize();
     double tInit = read_timer();     
     double *dA,*dB;
+    // allocate memory on GPU
     magma_malloc( (void**) &dA, sizeof(double)*size*size );
     magma_malloc( (void**) &dB, sizeof(double)*size*size );
     
@@ -83,31 +86,37 @@ int main( int argc, char **argv ) {
     cudaDeviceSynchronize();
     double tInit2 = read_timer();
 
+    // transfer data to GPU
     magma_dsetmatrix( size, size, B, size, dB, size );
 
     cudaDeviceSynchronize();
     double tTransferToGPU = read_timer();
 
+    // matrix multiply
     magmablas_dgemm('N', 'T', size, size, size, one, dB, size, dB, size, zero, dA, size );
     // magma_dgemm is apparently synonymous with magmablas_dgemm
 
     cudaDeviceSynchronize();
     double tMatMult = read_timer();
  
+    // Cholesky decomposition on GPU with GPU interface (called with object on GPU)
     magma_dpotrf_gpu( 'L', size, dA, size, &info );
 
     cudaDeviceSynchronize();
     double tChol = read_timer();
 
+    // transfer data back to CPU
     magma_dgetmatrix( size, size, dA, size, A, size );
     cudaDeviceSynchronize();
     double tTransferFromGPU = read_timer();
  
+    // standard BLAS matrix multiply on CPU
     dgemm_( &N2, &T2, &size, &size, &size, &one, B, &size, B, &size, &zero, A, &size );
 
     cudaDeviceSynchronize();
     double tMatMultBlas = read_timer();
 
+    // Cholesky decomposition on GPU with CPU interface (called with object on CPU)
     magma_dpotrf( 'L', size, A, size, &info );
 
     cudaDeviceSynchronize();
@@ -119,6 +128,7 @@ int main( int argc, char **argv ) {
     cudaDeviceSynchronize();
     double tInit3 = read_timer();
 
+    // standard Lapack Cholesky decomposition on CPU
     dpotrf_(&uplo, &size, A, &size, &info);
   
     cudaDeviceSynchronize();

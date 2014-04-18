@@ -15,6 +15,7 @@
 #define BLOCK_D3 1
 
 // this is the kernel function called for each thread
+// we use the CUDA variables {threadIdx, blockIdx, blockDim, gridDim} to determine a unique ID for each thread
 __global__ void hello(void)
 {
     // id of the block
@@ -28,9 +29,12 @@ __global__ void hello(void)
     if(idx < 2000 || idx > 19000) {
        // print buffer from within the kernel is limited so only print for first and last chunks of threads
     if (idx < N){      
-        printf("Hello world! My block index is (%d,%d) [Grid dims=(%d,%d)], 3D-thread index within block=(%d,%d,%d) => thread index=%d\n", blockIdx.x, blockIdx.y, gridDim.x, gridDim.y, threadIdx.x, threadIdx.y, threadIdx.y, idx);
+        printf("Hello world! My block index is (%d,%d) [Grid dims=(%d,%d)], 3D-thread index within block=(%d,%d,%d) => \
+       thread index=%d\n", blockIdx.x, blockIdx.y, gridDim.x, gridDim.y, threadIdx.x, threadIdx.y, threadIdx.y, idx);
     } else {
-        printf("Hello world! My block index is (%d,%d) [Grid dims=(%d,%d)], 3D-thread index within block=(%d,%d,%d) => thread index=%d [### this thread would not be used for N=%d ###]\n", blockIdx.x, blockIdx.y, gridDim.x, gridDim.y, threadIdx.x, threadIdx.y, threadIdx.y, idx, N);
+        printf("Hello world! My block index is (%d,%d) [Grid dims=(%d,%d)], 3D-thread index within block=(%d,%d,%d) => \
+        thread index=%d [### this thread would not be used for N=%d ###]\n", blockIdx.x, blockIdx.y, gridDim.x, gridDim.y, 
+        threadIdx.x, threadIdx.y, threadIdx.y, idx, N);
     }
     }
 }
@@ -38,6 +42,7 @@ __global__ void hello(void)
 
 int main(int argc,char **argv)
 {
+    // objects containing the block and grid info
     const dim3 blockSize(BLOCK_D1, BLOCK_D2, BLOCK_D3);
     const dim3 gridSize(GRID_D1, GRID_D2, 1);
     int nthreads = BLOCK_D1*BLOCK_D2*BLOCK_D3*GRID_D1*GRID_D2;

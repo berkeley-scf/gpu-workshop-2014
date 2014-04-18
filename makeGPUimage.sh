@@ -187,6 +187,16 @@ echo "     RCUDA (development version)" >> /etc/motd.tail
 echo "     PyCUDA" >> /etc/motd.tail
 echo "  " >> /etc/motd.tail
 
+### for image used for GPU workshop April 2014, put the public key in the ubuntu user's .ssh directory so others can log in:
+cd /home/ubuntu
+scp paciorek@smeagol.berkeley.edu:~/staff/workshops/gpu-workshop-2014/gpu_rsa.pub .ssh/.
+cat .ssh/gpu_rsa.pub >> .ssh/authorized_keys
+echo "Some rules for using this VM, since everyone is sharing the 'ubuntu' user name:" >> README_BEFORE_DOING_ANYTHING_ON_THIS_VM
+echo "1) create a unique directory here in /home/ubuntu and place your files only in that directory so that there are not conflicts with other users; e.g., create and put your files in /home/ubuntu/sarah if your name is sarah" >> README_BEFORE_DOING_ANYTHING_ON_THIS_VM
+echo "2) you have sudo privileges but you should not use them to alter the system" >> README_BEFORE_DOING_ANYTHING_ON_THIS_VM
+
+chown ubuntu:ubuntu README_BEFORE_DOING_ANYTHING_ON_THIS_VM .ssh/gpu_rsa.pub
+
 
 #### Create image ##########################
 
@@ -194,5 +204,5 @@ echo "  " >> /etc/motd.tail
 # 2) make it public
 # 3) test w/ starcluster 0.95.2 I now seem to be able to use StarCluster to start it (formerly it didn't like g2.2xlarge)
 
-# need to put /usr/local/cuda/bin in path as it's not 
+# need to put /usr/local/cuda/bin in path for paciorek as it's not 
 # need to copy authorized_keys from either root or ubuntu to paciorek
