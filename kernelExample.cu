@@ -10,7 +10,7 @@
 #define BLOCK_D2 1
 #define BLOCK_D3 1
 
-// Note: Needs compute capability > 2.0 for calculation with doubles, so compile with:
+// Note: Needs compute capability >= 2.0 for calculation with doubles, so compile with:
 // nvcc kernelExample.cu -arch=compute_20 -code=sm_20,compute_20 -o kernelExample
 // -use_fast_math doesn't seem to have any effect on speed
 

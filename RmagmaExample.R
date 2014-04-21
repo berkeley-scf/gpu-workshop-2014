@@ -5,9 +5,7 @@ for(n in c(4096, 8192)) {
   mX <- magma(x)
   v <- rnorm(n)
   mV <- magma(v)
-  gpu(mV)
-  mVc <- magma(v)
-  gpu(mVc) <- FALSE
+  gpu(mV) # will indicate that we are using M
 
   gpu_time <- system.time({
     mY <- crossprod(mX);
@@ -15,8 +13,9 @@ for(n in c(4096, 8192)) {
     mR <- backsolve(mU, mV)
   })
                                         # 2.8 for n=4096; 18.3 for n=8192
-  
+
   cpu_time <- system.time({
+
     Y <- crossprod(x);
     U <- chol(Y);
     R <- backsolve(U, v)

@@ -2,7 +2,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-// Note: Needs compute capability > 2.0, so compile with:
+// Note: Needs compute capability >= 2.0, so compile with:
 // nvcc helloWorld.cu -arch=compute_20 -code=sm_20,compute_20 -o helloWorld
 
 // number of computations:
