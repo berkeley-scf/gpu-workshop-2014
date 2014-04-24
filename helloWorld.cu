@@ -30,11 +30,11 @@ __global__ void hello(void)
        // print buffer from within the kernel is limited so only print for first and last chunks of threads
     if (idx < N){      
         printf("Hello world! My block index is (%d,%d) [Grid dims=(%d,%d)], 3D-thread index within block=(%d,%d,%d) => \
-       thread index=%d\n", blockIdx.x, blockIdx.y, gridDim.x, gridDim.y, threadIdx.x, threadIdx.y, threadIdx.y, idx);
+       thread index=%d\n", blockIdx.x, blockIdx.y, gridDim.x, gridDim.y, threadIdx.x, threadIdx.y, threadIdx.z, idx);
     } else {
         printf("Hello world! My block index is (%d,%d) [Grid dims=(%d,%d)], 3D-thread index within block=(%d,%d,%d) => \
         thread index=%d [### this thread would not be used for N=%d ###]\n", blockIdx.x, blockIdx.y, gridDim.x, gridDim.y, 
-        threadIdx.x, threadIdx.y, threadIdx.y, idx, N);
+        threadIdx.x, threadIdx.y, threadIdx.z, idx, N);
     }
     }
 }
