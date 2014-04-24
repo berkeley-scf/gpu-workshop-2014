@@ -4,7 +4,7 @@ Chris Paciorek, Statistical Computing Facility, Department of Statistics, UC Ber
 
 Presented: April 25, 2014
 
-Last Revised: April 18, 2014
+Last Revised: April 24, 2014
 
 
 ```{r setup, include=FALSE}
