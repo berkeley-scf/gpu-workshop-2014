@@ -28,7 +28,7 @@ for(n in c(4096, 8192)) {
 }
 
 cat("Check for use of double precision empirically\n")
-range(abs(mY - Y))
+print(range(abs(mY - Y)))
 options(digits = 16)
-mY[1:3, 1]
-Y[1:3, 1]
+print(mY[1:3, 1])
+print(Y[1:3, 1])
