@@ -681,7 +681,7 @@ So for some tasks and possibly with some additional coding effort, you may see s
 
 Finally, rather than bringing a large chunk of data back to the CPU, you might do a reduction/aggregation operation (e.g., summing over values) in GPU memory. To do this, here's a [presentation](http://will-landau.com/gpu/lectures/cudac-atomics/cudac-atomics.pdf)‎ that has some useful information. 
 
-# 5.2) A Comment on Compilation
+### 5.2) A Comment on Compilation
 
 * If you compile CUDA code into an object file, you can link that with other object files (e.g., from C or C++ code) into an executable that can operate on CPU and GPU. This also means you could compile a shared object (i.e., a library)  that you could call from R with .C, .Call, or Rcpp. 
 
