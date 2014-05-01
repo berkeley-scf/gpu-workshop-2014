@@ -3,7 +3,7 @@ library(RCUDA)
 cat("Setting cuGetContext(TRUE)...\n")
 cuGetContext(TRUE)
 
-ptx = nvcc("random.cu", out = "random.ptx", target = "ptx",
+ptx = nvcc("random-single.cu", out = "random-single.ptx", target = "ptx",
      "-arch=compute_20", "-code=sm_20,compute_20")
   
 m = loadModule(ptx)
