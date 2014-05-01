@@ -671,7 +671,7 @@ Using the CPU interface seems to provide a modest speedup (compared to the manua
 
 [Suchard et al (2010; Journal of Computational and Graphical Statistics 19:419](http://www.tandfonline.com/doi/abs/10.1198/jcgs.2010.10016#.U2GTuBUgoWk) and [Lee et al (2010; Journal of Computational and Graphical Statistics 19:769](http://www.tandfonline.com/doi/abs/10.1198/jcgs.2010.10039#.U2GT9BUgoWk) talk about the use of GPUs for statistics. The speedups they see can get as high as 120 times the speed of a single CPU core and 500 times a single CPU core, respectively. Some possible reasons for these more impressive speedups relative to those seen here include:
 
-* Use of single precision floating point calculations. If single precision doesn't affect your calculation substantively, this is worth trying. Particularly on older GPUs (but perhaps still true), single precision was much faster than double precision.
+* Use of single precision floating point calculations. If single precision doesn't affect your calculation substantively, this is worth trying. Particularly on older GPUs (but perhaps still true), single precision was much faster than double precision. However, in tests in which I switched the kernelExample.cu and RNGexample.R/random.cu examples to single precision there was very little change in speed.
 
 * Careful use of shared memory (shared amongst the threads in a block) in place of the main GPU memory (see the Suchard et al. paper)
 
