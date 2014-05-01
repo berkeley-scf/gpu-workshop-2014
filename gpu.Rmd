@@ -4,14 +4,14 @@ Chris Paciorek, Statistical Computing Facility, Department of Statistics, UC Ber
 
 Presented: April 25, 2014
 
-Last Revised: April 24, 2014
+Last Revised: April 30, 2014
 
 
 ```{r setup, include=FALSE}
 opts_chunk$set(cache = TRUE) # because the compilation takes time, let's cache it
 ```
 
-# 0) This tutorial
+# 0) This Tutorial
 
 Materials for this tutorial, including the R markdown file that was used to create this document are available on github at `https://github.com/berkeley-scf/git-workshop-2014`.  You can download the files by doing a git clone:
 ```{clone, eval=FALSE, engine='bash'}
@@ -40,7 +40,7 @@ GPUs have many processing units but limited memory. Also, they can only use data
 
 The `g2.2xlarge` Amazon EC2 instance types have 1536 cores and 4 Gb memory. They're of the `Kepler` architecture (3rd generation). The 2nd generation was `Fermi` and the 1st was `Tesla`. (However note that `Tesla` is also used by NVIDIA to refer to different chip types, so for example the `cg1.4xlarge` Amazon EC2 instances have chips that are `NVIDIA Tesla M2050 GPUs ("Fermi" GF100)`, but are the `Fermi` architecture.) Originally GPUs supported only single precision (i.e., `float` calculations) but fortunately they now support double precision operations and all of the examples here will use doubles to avoid potential numerical issues, in particular with linear algebra calculations. 
 
-#### Demonstration using Amazon's EC2 
+#### Demonstration Using Amazon's EC2 
 
 Since the SCF does not have any machines with a GPU, we'll need to use a cloud-based machine. Amazon's EC2 provide two types of GPU instances: `g2.2xlarge` and `cg1.4xlarge`. The first is more recent, though in some of my tests cg1.4xlarge was actually faster. However given that the price for g2.2xlarge is 65 cents per hour and cg1.4xlarge is more than $2 per hour, we'll use g2.2xlarge.
 
@@ -150,6 +150,8 @@ Kernels are functions that encode the core computational operations done on indi
 
 A note on the speed comparisons in this section. These compare a fully serial CPU calculation on a single core to calculation on the GPU. On a multicore machine, we could speed up the CPU calculation by writing code to parallelize the calculation (e.g., via threading in C/openMP or various parallelization tools in R or Python). 
 
+See my comments in the last Section regarding some tips and references that may enable you to get more impressive speedups than I show in the demos here. 
+
 ### 2.1) Background: 
 
 #### Threads and Grids
@@ -158,7 +160,7 @@ Each individual computation or series of computations on the GPU is done in a th
 
 Threads are quick to start, and to get efficiency you want to have thousands of threads to exploit the parallelism of the GPU hardware. In general your calculations will have more threads than GPU cores.
 
-This can all get quite complicated, with the possibility for communication amongst threads. We won't go into this, but threads within a block share memory (distinct from the main GPU memory) and can synchronize with each other, while threads in different blocks cannot cooperate. 
+This can all get quite complicated, with the possibility for communication amongst threads. We won't go into this, but threads within a block shared memory (distinct from the main GPU memory) and can synchronize with each other, while threads in different blocks cannot cooperate. The Suchard et al. paper referenced in the last Section discusses how to get more efficiency by having threads within a block cooperate and access shared memory, which is much faster than accessing the  main GPU (device) memory.
 
 Executing the following code as root will create an executable that will show you details on the GPU, including the possible block and grid dimensions. 
 ```{deviceQuery, engine='bash', eval=FALSE}
@@ -229,7 +231,7 @@ Some of this is obscured because CUDA, RCUDA, and PyCUDA do some of the work for
 
 When we write a kernel, we will need to have some initial code that determines a unique ID for that thread  that allows the thread to access the appropriate part(s) of the data object(s) on the GPU. This is done based on information stored in variables that CUDA provides that have information about the thread and block indices and block and grid dimensions.
 
-### 2.2) Using CUDA directly
+### 2.2) Using CUDA Directly
 
 #### Hello, world
 
@@ -398,7 +400,7 @@ So the transfer time is again substantial in relative terms. Without that time, 
 We can avoid explicitly specifying block and grid dimensions by using the `gridBy` argument to `.cuda`, which we'll see in a later example.
 
 
-WARNING #1: be very careful that the types of the R objects passed to the kernel match what the kernel is expecting. Otherwise the code can hang without an informative error message
+WARNING #1: be very careful that the types of the R objects passed to the kernel match what the kernel is expecting. Otherwise the code can hang without an informative error message.
 
 WARNING #2: Note the use of the `strict=TRUE` argument when passing values to the GPU. This ensures that numeric values are kept as doubles and not coerced to floats. 
 
@@ -417,6 +419,8 @@ Output from GPU: 0.168458 0.174912 0.252148
 Output from CPU: 0.168458 0.174912 0.252148
 ```
 
+WARNING: As was the case with R, be careful that the types of the Python objects passed to the kernel match what the kernel is expecting. 
+
 PyCUDA also provides high-level functionality for vectorized calculations on the GPU. Basically you create a vector stored in GPU memory and then operate on it with a variety of mathematical functions. The modules that do this are `gpuarray` and `cumath`.
 
 Here's the [code (gpuArrayExample.py on the github repo)](https://github.com/berkeley-scf/gpu-workshop-2014/blob/master/gpuArrayExample.py)
@@ -433,6 +437,8 @@ CPU calc time: 0.088157s
 ```
 
 So the fully-vectorized calculation sees a pretty good speed-up but the dot product, which involves a reduction (the summation) does not. Also note that there is some compilation that gets done when the code is run the first time that causes the GPU calculation to be slow the first time but not the second time the code is run. 
+
+
 
 # 3) Random Number Generation (RNG) on the GPU
 
@@ -522,7 +528,7 @@ Remember to be careful of memory use as GPU's memory may be limited (on the EC2 
 
 Testing the same computation on an 8-core SCF physical machine gives 2.6 seconds for n=4096 and 20.8 seconds for n=8192 using threaded OpenBLAS. On the VM the CPU-based BLAS/LAPACK calculations seems to only be using 2 cores for some reason that is not clear to me, even though the VM has 8 virtual cores.
 
-### 4.2) Using C to call CUDA, CUDABLAS, and MAGMA
+### 4.2) Using C to Call CUDA, CUDABLAS, and MAGMA
 
 Next let's use CUDA and MAGMA calls directly in C code. Both CUDA (through CUDABLAS) and MAGMA provide access to BLAS functionality, but only MAGMA provides LAPACK-like functionality (i.e., matrix factorizations/decompositions). Note that we'll now need to directly manage memory allocation on the GPU and transferring data back and forth from CPU to GPU.
 
@@ -659,8 +665,24 @@ Using the CPU interface seems to provide a modest speedup (compared to the manua
 
 
 
-# 5) Some Final Comments and Cautions
+# 5) Some Final Comments
+
+### 5.1) Some Thoughts on Improving Computational Speed
+
+[Suchard et al (2010; Journal of Computational and Graphical Statistics 19:419](http://www.tandfonline.com/doi/abs/10.1198/jcgs.2010.10016#.U2GTuBUgoWk) and [Lee et al (2010; Journal of Computational and Graphical Statistics 19:769](http://www.tandfonline.com/doi/abs/10.1198/jcgs.2010.10039#.U2GT9BUgoWk) talk about the use of GPUs for statistics. The speedups they see can get as high as 120 times the speed of a single CPU core and 500 times a single CPU core, respectively. Some possible reasons for these more impressive speedups relative to those seen here include:
+
+* Use of single precision floating point calculations. If single precision doesn't affect your calculation substantively, this is worth trying. Particularly on older GPUs (but perhaps still true), single precision was much faster than double precision.
+
+* Careful use of shared memory (shared amongst the threads in a block) in place of the main GPU memory (see the Suchard et al. paper)
+
+* Computational tasks that are very arithmetically intensive but with limited memory access (see the Lee et al. paper)
+
+So for some tasks and possibly with some additional coding effort, you may see speedups of 100-200 fold compared to a single CPU core, rather than the 40 fold speedup that is about the best seen in the demos here.
+
+Finally, rather than bringing a large chunk of data back to the CPU, you might do a reduction/aggregation operation (e.g., summing over values) in GPU memory. To do this, here's a [presentation](http://will-landau.com/gpu/lectures/cudac-atomics/cudac-atomics.pdf)‎ that has some useful information. 
+
+# 5.2) A Comment on Compilation
 
 * If you compile CUDA code into an object file, you can link that with other object files (e.g., from C or C++ code) into an executable that can operate on CPU and GPU. This also means you could compile a shared object (i.e., a library)  that you could call from R with .C, .Call, or Rcpp. 
 
-* Make sure that the types you pass from R or Python exactly match the types expected by the CUDA kernel. Hard-to-understand errors can otherwise result.
+
